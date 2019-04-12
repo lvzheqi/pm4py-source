@@ -134,7 +134,8 @@ def apply_log(log, petri_net, initial_marking, final_marking, parameters=None, v
             else:
                 model_cost_function[t] = 1
 
-    best_worst_cost = VERSIONS_COST[version](petri_net, initial_marking, final_marking)
+    # best_worst_cost = VERSIONS_COST[version](petri_net, initial_marking, final_marking)
+    best_worst_cost = VERSIONS_COST[version](petri_net, initial_marking, final_marking, parameters)
 
     parameters[pm4py.util.constants.PARAMETER_CONSTANT_ACTIVITY_KEY] = activity_key
     parameters[
