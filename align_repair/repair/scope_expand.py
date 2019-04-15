@@ -1,5 +1,5 @@
 from pm4py.objects.process_tree.pt_operator import Operator
-from align_repair.pt_manipulate import pt_number
+from align_repair.pt_manipulate import pt_number, pt_compare
 from align_repair.pt_manipulate.utils import is_node_start, is_node_end, is_sync_move, check_tuple_belong_to_subtree
 
 
@@ -271,7 +271,8 @@ def scope_expand_trace(align, subtree, ret_tuple_as_trans_desc):
     return align
 
 
-def scope_expand(alignments, subtree, ret_tuple_as_trans_desc):
+def scope_expand(alignments, tree, m_tree, ret_tuple_as_trans_desc):
+    _, subtree, _ = pt_compare.pt_compare(tree, m_tree)
     for align in alignments:
         new_align = scope_expand_trace(align["alignment"], subtree, ret_tuple_as_trans_desc)
         align["alignment"] = new_align

@@ -25,6 +25,9 @@ def normal_pt_compare(tree1, tree2):
 
     if tree1.operator is not None and tree2.operator is not None and tree1.operator != tree2.operator:
         return False, tree1, tree2
+    if (tree1.parent is None or tree2.parent is None) and \
+            (tree1.operator != tree2.operator or tree1.label != tree2.label):
+        return False, tree1, tree2
     if tree1.operator != tree2.operator or tree1.label != tree2.label:
         return False, tree1.parent, tree2.parent
 

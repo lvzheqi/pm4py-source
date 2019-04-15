@@ -54,8 +54,6 @@ def get_best_worst_cost(petri_net, initial_marking, final_marking, parameters=No
         Initial marking
     final_marking
         Final marking
-    parameters
-        Parameters
 
     Returns
     -----------
@@ -66,7 +64,7 @@ def get_best_worst_cost(petri_net, initial_marking, final_marking, parameters=No
                                                                                         petri_net, initial_marking,
                                                                                         final_marking,
                                                                                         parameters=parameters)
-    return best_worst['cost'] // alignments.utils.STD_MODEL_LOG_MOVE_COST
+    return best_worst['cost'] // alignments.utils.STD_MODEL_MODEL_MOVE_COST
 
 
 def apply(trace, petri_net, initial_marking, final_marking, parameters=None):

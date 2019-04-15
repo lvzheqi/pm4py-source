@@ -44,6 +44,7 @@ def add_new_node(tree):
         child = node.children[1]
         new_child = ProcessTree(Operator.XOR, node, [child, add_node], None)
         child.parent = new_child
+        add_node.parent = new_child
         node.children[1] = new_child
     else:
         node.children.append(add_node)

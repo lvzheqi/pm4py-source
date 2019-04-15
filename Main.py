@@ -17,10 +17,10 @@ from align_repair.stochastic_generation.non_fitting_eventlog_generation import c
 from align_repair.pt_manipulate.pt_compare import pt_compare
 from align_repair.pt_manipulate import pt_number
 from pm4py.objects.log.util import xes
-from align_repair.repair.align_repair import alignment_repair_with_operator
+from align_repair.repair.align_repair import alignment_repair_with_operator, alignment_repair_with_operator_align
 from pm4py.objects.log.log import EventLog, Trace, Event
 from align_repair.repair.scope_expand import scope_expand
-from align_repair.evaluation.evaluation import compare_run_time, alignment_quality
+from align_repair.evaluation import evaluation as eva
 
 
 def print_spilt_end():
@@ -85,16 +85,33 @@ def align_repair_example1():
     # gviz2 = pt_vis_factory.apply(tree_mutated)
     # pt_vis_factory.view(gviz2)
 
-    net, initial_marking, final_marking = pt_to_net_with_op.apply_with_operator(tree_mutated)
+    net, initial_marking, final_marking = pt_to_net_with_op.apply_with_operator(tree_mutated, {"PARAM_CHILD_LOCK": True})
+    parameters = pt_to_net_with_op.get_parameters(net)
+    parameters['PARAM_CHILD_LOCK'] = True
     alignments = align_factory.apply_log(log, net, initial_marking, final_marking,
-                                         parameters=pt_to_net_with_op.get_parameters(net))
-    # print(alignments.pop(0))
+                                         parameters=parameters)
+    print_short_alignment(alignments)
 
-    align_repair = alignment_repair_with_operator(tree_template, tree_mutated, log, parameters=pt_to_net_with_op.get_parameters(net))
-    # print(align_repair.pop(0))
+    align_repair = alignment_repair_with_operator(tree_template, tree_mutated, log, parameters=parameters)
+    print_short_alignment(align_repair)
+
     # log_fitness = replay_fitness_factory.evaluate(alignments_pt, variant="alignments")
     # # print(log_fitness)
     print_spilt_end()
+
+
+def is_slient_move(align):
+    align = align[1]
+    if align[0] == ">>" and (align[1] is None or align[1].endswith("_s") or align[1].endswith("_e")):
+        return False
+    return True
+
+
+def print_short_alignment(alignments):
+    for align in alignments:
+        new_align = list(filter(is_slient_move, align['alignment']))
+        align["alignment"] = list(map(lambda ali: ali[1], new_align))
+    print(alignments)
 
 
 def align_repair_example2():
@@ -133,16 +150,28 @@ def create_event_log(events):
 
 def align_repair_example3():
     print_spilt_start("align-repair-3")
-    tree1 = pt_util.parse("->( a, *( X( d, e), k , τ), i")
-    tree2 = pt_util.parse("->( a, *( X( d, c), k, τ), i")
-    log = create_event_log("aei")
+    tree1 = pt_util.parse("X( *( *( b, *( c, d, τ ), τ ), a, τ ), e, f )")
+    tree2 = pt_util.parse("X( +( *( b, *( c, d, τ ), τ ), a ), e, f )")
+    log = create_event_log("ig")
     net, initial_marking, final_marking = pt_to_net_with_op.apply_with_operator(tree2, {'PARAM_CHILD_LOCK': True})
     # alignments = align_factory.apply_log(log, net, initial_marking, final_marking,
     #                                      parameters=pt_to_net_with_op.get_parameters(net))
     # print(alignments)
     parameters = pt_to_net_with_op.get_parameters(net)
     parameters['PARAM_CHILD_LOCK'] = True
-    alignment_repair_with_operator(tree1, tree2, log, parameters=parameters)
+    alignments = [{'alignment': [(('>>', '1_s'), ('>>', '1_s')), (('>>', '2_s'), ('>>', '2_s')), (('>>', '3_s'), ('>>', '3_s')),
+                       (('>>', '4_s'), ('>>', '4_s')), (('>>', 'b'), ('>>', 'b')), (('>>', '4_e'), ('>>', '4_e')),
+                       (('>>', '9_s'), ('>>', '9_s')), (('>>', '9_skip_2'), ('>>', None)),
+                       (('>>', '9_e'), ('>>', '9_e')), (('>>', '3_e'), ('>>', '3_e')), (('>>', '11_s'), ('>>', '11_s')),
+                       (('>>', '11_skip_3'), ('>>', None)), (('>>', '11_e'), ('>>', '11_e')),
+                       (('>>', '2_e'), ('>>', '2_e')), (('>>', '1_e'), ('>>', '1_e')), (('t_i_0', '>>'), ('i', '>>')),
+                       (('t_g_1', '>>'), ('g', '>>'))], 'cost': 12, 'visited_states': 48, 'queued_states': 51,
+         'traversed_arcs': 51, 'fitness': 0.0}]
+    pt_number.dfs_number(tree1)
+    pt_number.dfs_number(tree2)
+    _, tree1, tree2 = pt_compare(tree1, tree2)
+    repair = alignment_repair_with_operator_align(tree1, tree2, log, alignments, parameters=parameters)
+    print(repair)
     print_spilt_end()
 
 
@@ -225,22 +254,9 @@ def test_scope_expand_example1():
                              (('>>', '9_e'), ('>>', '9_e')), (('>>', '1_e'), ('>>', '1_e'))],
                'cost': 20015, 'visited_states': 30, 'queued_states': 52, 'traversed_arcs': 52, 'fitness': 0.9090909}]
     print(s_align)
-    _, sub1, _ = pt_compare(tree1, tree2)
-    scope_expand(s_align, sub1, True)
+    scope_expand(s_align, tree1, tree2, True)
     print(s_align)
     print_spilt_end()
-
-    a = {'alignment': [(('>>', '1_s'), ('>>', '1_s')), (('>>', '2_s'), ('>>', '2_s')), (('t_a_0', 'a'), ('a', 'a')),
-                   (('>>', '2_e'), ('>>', '2_e')), (('>>', '3_s'), ('>>', '3_s')), (('>>', '4_s'), ('>>', '4_s')),
-                   (('>>', '5_s'), ('>>', '5_s')), (('t_c_3', 'c'), ('c', 'c')), (('>>', '4_e'), ('>>', '4_e')),
-                   (('>>', '7_s'), ('>>', '7_s')), (('t_d_1', '>>'), ('>>', 'd')), (('>>', '7_e'), ('>>', '7_e')),
-                   (('>>', '4_s'), ('>>', '4_s')), (('>>', '5_e'), ('>>', '5_e')), (('t_k_2', '>>'), ('k', '>>')),
-                   (('>>', '6_s'), ('>>', '6_s')), (('t_b_3', 'b'), ('b', 'b')), (('>>', '4_e'), ('>>', '4_e')),
-                   (('>>', '6_e'), ('>>', '6_e')), (('>>', '8_s'), ('>>', '8_s')), (('>>', '8_skip_1'), ('>>', None)),
-                   (('>>', '8_e'), ('>>', '8_e')), (('t_k_2', '>>'), ('k', '>>')), (('>>', '3_e'), ('>>', '3_e')),
-                   (('>>', '9_s'), ('>>', '9_s')), (('t_e_4', 'e'), ('e', 'e')), (('>>', '9_e'), ('>>', '9_e')),
-                   (('>>', '1_e'), ('>>', '1_e'))], 'cost': 20015, 'visited_states': 30, 'queued_states': 52,
-     'traversed_arcs': 52, 'fitness': 0.9090909}
 
 
 def test_scope_expand_example():
@@ -273,18 +289,22 @@ def test_scope_expand_example():
                    (('t_a_3', 'a'), ('>>', 'a')), (('>>', '7_e'), ('>>', '7_e')), (('>>', '1_e'), ('>>', '1_e'))],
      'cost': 10014, 'visited_states': 25, 'queued_states': 51, 'traversed_arcs': 51, 'fitness': 0.9473684210526316}]
     print(s_align)
-    _, sub1, _ = pt_compare(tree1, tree2)
-    scope_expand(s_align, sub1, True)
+    scope_expand(s_align, tree1, tree2, True)
     print(s_align)
     print_spilt_end()
 
 
 def evaluation():
     print_spilt_start("Compare_Runtime")
-    # compare_run_time(20)
-    alignment_quality()
+    # eva.compare_run_time()
+    eva.alignment_quality_log_based_on_tree2()
     print_spilt_end()
 
+
+def test_generate_log():
+    tree = pt_util.parse("X( b, c, *( d, *( e, f, τ ), τ ), ->( X( ->( g, h ), +( i, j ) ), a ) )")
+    tree = randomly_create_mutated_tree(tree)
+    create_non_fitting_eventlog(tree, 2, 0.8)
 
 # pt_to_pn_alignment()
 # random_create(20, 20)
