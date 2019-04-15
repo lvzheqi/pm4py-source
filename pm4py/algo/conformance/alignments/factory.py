@@ -39,7 +39,6 @@ def apply_trace(trace, petri_net, initial_marking, final_marking, parameters=Non
                 version=VERSION_STATE_EQUATION_A_STAR):
     """
     apply alignments to a trace
-
     Parameters
     -----------
     trace
@@ -61,8 +60,6 @@ def apply_trace(trace, petri_net, initial_marking, final_marking, parameters=Non
             mapping of each transition in the model to corresponding model cost
             pm4py.algo.conformance.alignments.versions.state_equation_a_star.PARAM_TRACE_COST_FUNCTION ->
             mapping of each index of the trace to a positive cost value
-
-
     Returns
     -----------
     alignment
@@ -82,7 +79,6 @@ def apply_trace(trace, petri_net, initial_marking, final_marking, parameters=Non
 def apply_log(log, petri_net, initial_marking, final_marking, parameters=None, version=VERSION_STATE_EQUATION_A_STAR):
     """
     apply alignments to a trace
-
     Parameters
     -----------
     log
@@ -105,8 +101,6 @@ def apply_log(log, petri_net, initial_marking, final_marking, parameters=None, v
             mapping of each transition in the model to corresponding model cost
             pm4py.algo.conformance.alignments.versions.state_equation_a_star.PARAM_TRACE_COST_FUNCTION ->
             mapping of each index of the trace to a positive cost value
-
-
     Returns
     -----------
     alignment
@@ -151,7 +145,6 @@ def apply_log(log, petri_net, initial_marking, final_marking, parameters=None, v
         # align['fitness'] = 1 - ((align['cost']  // ali.utils.STD_MODEL_LOG_MOVE_COST) / best_worst_cost)
         # align['fitness'] = 1 - (
         #         (align['cost'] // ali.utils.STD_MODEL_LOG_MOVE_COST) / (len(log[index]) + best_worst_cost))
-        # e.g. X( *( τ, b, τ ), a ) and trace is []
         align['fitness'] = 1 - (align['cost'] / (len(log[index]) * 5 + best_worst_cost * 2)) if \
-            not (len(log[index]) == 0 and best_worst_cost == 0) else 1
+            not (log[index] == 0 and best_worst_cost == 0) else 1
     return alignments

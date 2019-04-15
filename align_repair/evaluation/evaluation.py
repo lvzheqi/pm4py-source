@@ -210,14 +210,15 @@ def creat_non_fitting_based_on_tree1(file, name, node_num):
 
 def alignment_quality_log_based_on_tree2():
     # 5 * 10 * 20
-    file = Workbook(encoding='utf-8')
-
-    # creat_non_fitting_based_on_tree2(file, "Node11-15", [11, 15])
-    # creat_non_fitting_based_on_tree2(file, "Node16-20", [16, 20])
-    # creat_non_fitting_based_on_tree2(file, "Node21-25", [21, 25])
-    creat_non_fitting_based_on_tree2(file, "Node26-30", [26, 30])
-
-    file.save('L22_data.xls')
+    # file = Workbook(encoding='utf-8')
+    #
+    # # creat_non_fitting_based_on_tree2(file, "Node11-15", [11, 15])
+    # # creat_non_fitting_based_on_tree2(file, "Node16-20", [16, 20])
+    # # creat_non_fitting_based_on_tree2(file, "Node21-25", [21, 25])
+    # creat_non_fitting_based_on_tree2(file, "Node26-30", [26, 30])
+    #
+    # file.save('L22_data.xls')
+    example()
 
 
 def creat_non_fitting_based_on_tree2(file, name, node_num):
@@ -256,7 +257,7 @@ def create_event_log(log):
 def example():
     tree1 = pt_util.parse("X( *( X( c, d ), b, τ ), a )")
     tree2 = pt_util.parse("X( *( τ, b, τ ), a )")
-    log = create_event_log([""])
+    log = create_event_log(["ab"])
     # log = create_event_log([ "d"])
     # net, initial_marking, final_marking = pt_to_net_with_op.apply_with_operator(tree1, {'PARAM_CHILD_LOCK': True})
     # parameters = pt_to_net_with_op.get_parameters(net)
