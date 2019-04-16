@@ -15,7 +15,6 @@ from pm4py.objects.log.util.xes import DEFAULT_NAME_KEY
 from pm4py.util.constants import PARAMETER_CONSTANT_ACTIVITY_KEY
 from pm4py.algo.filtering.log.variants import variants_filter as variants_module
 
-
 VERSION_STATE_EQUATION_A_STAR = 'state_equation_a_star'
 VERSIONS = {VERSION_STATE_EQUATION_A_STAR: versions.state_equation_a_star.apply}
 VERSIONS_COST = {VERSION_STATE_EQUATION_A_STAR: versions.state_equation_a_star.get_best_worst_cost}
@@ -155,13 +154,25 @@ def apply_log(log, petri_net, initial_marking, final_marking, parameters=None, v
         alignments.append(al_idx[i])
 
     # assign fitness to traces
+
     for index, align in enumerate(alignments):
-        unfitness_upper_part = align['cost'] // ali.utils.STD_MODEL_LOG_MOVE_COST
+        unfitness_upper_part = align['cost']
         if unfitness_upper_part == 0:
             align['fitness'] = 1
         elif (len(log[index]) + best_worst_cost) > 0:
-            align['fitness'] = 1 - (
-                    (align['cost'] // ali.utils.STD_MODEL_LOG_MOVE_COST) / (len(log[index]) + best_worst_cost))
+            align['fitness'] = 1 - align['cost'] / (
+                        len(log[index]) * ali.utils.STD_MODEL_LOG_MOVE_COST + best_worst_cost)
         else:
             align['fitness'] = 0
     return alignments
+
+    # for index, align in enumerate(alignments):
+    #     unfitness_upper_part = align['cost'] // ali.utils.STD_MODEL_LOG_MOVE_COST
+    #     if unfitness_upper_part == 0:
+    #         align['fitness'] = 1
+    #     elif (len(log[index]) + best_worst_cost) > 0:
+    #         align['fitness'] = 1 - (
+    #                 (align['cost'] // ali.utils.STD_MODEL_LOG_MOVE_COST) / (len(log[index]) + best_worst_cost))
+    #     else:
+    #         align['fitness'] = 0
+    # return alignments

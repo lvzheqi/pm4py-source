@@ -189,7 +189,7 @@ def alignment_repair_with_operator(tree1, tree2, log, parameters=None):
     return alignments
 
 
-def alignment_repair_with_operator_align(subtree1, subtree2, log, alignments, parameters=None):
+def alignment_repair_with_operator_align(tree1, tree2, log, alignments, parameters=None):
     """
     Alignment repair on tree2 based on the alignment of log on tree1
 
@@ -209,10 +209,8 @@ def alignment_repair_with_operator_align(subtree1, subtree2, log, alignments, pa
     alignments
         repaired alignments
     """
-    # RELABEL
-    # pt_number.dfs_number(subtree2, n1 + 1)
+
     ret_tuple_as_trans_desc = parameters[PARAM_ALIGNMENT_RESULT_IS_SYNC_PROD_AWARE] if parameters is not None else False
-# <<<<<<< HEAD
     same, subtree1, subtree2 = pt_compare.pt_compare(tree1, tree2)
     if same:
         return alignments
@@ -228,26 +226,6 @@ def alignment_repair_with_operator_align(subtree1, subtree2, log, alignments, pa
                 alignment_reassemble(align['alignment'], sub_aligns_after, scope.anchor_index, subtree1, ret_tuple_as_trans_desc)
                 recompute_cost(align, sub_aligns_before, sub_aligns_after)
         recompute_fitness(alignments, log, tree2, parameters)
-# =======
-#     # if same:
-#     #     return alignments
-#     # else:
-#     for i, align in enumerate(alignments):
-#         scope = detect_change_scope(align['alignment'], subtree1, log[i], ret_tuple_as_trans_desc)
-#         sub_aligns_before = apply_pt_alignments(EventLog(scope.traces), subtree1, parameters)
-#         sub_aligns_after = apply_pt_alignments(EventLog(scope.traces), subtree2, parameters)
-#         alignment_reassemble(align['alignment'], sub_aligns_after, scope.anchor_index, subtree1, ret_tuple_as_trans_desc)
-#         recompute_cost(align, sub_aligns_before, sub_aligns_after)
-#     # recompute_fitness(alignments, log, tree2, parameters)
-# >>>>>>> origin/master
-    # for i in range(len(alignments)):
-    #     for t in log:
-    #         for e in t:
-    #             print(e[pm4py.objects.log.util.xes.DEFAULT_NAME_KEY], end=", ")
-    #     print()
-    #     print(align_orig[i])
-    #     print(alignments[i])
-    #     print()
     return alignments
 
 
