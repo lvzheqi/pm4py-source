@@ -155,7 +155,6 @@ def apply_log(log, petri_net, initial_marking, final_marking, parameters=None, v
         alignments.append(al_idx[i])
 
     # assign fitness to traces
-    print(best_worst_cost)
     for index, align in enumerate(alignments):
         unfitness_upper_part = align['cost'] // ali.utils.STD_MODEL_LOG_MOVE_COST
         if unfitness_upper_part == 0:
