@@ -9,6 +9,9 @@ class TransitionSystem(object):
         def __get_name(self):
             return self.__name
 
+        def __set_name(self, name):
+            self.__name = name
+
         def __get_outgoing(self):
             return self.__outgoing
 
@@ -27,17 +30,17 @@ class TransitionSystem(object):
         def __repr__(self):
             return str(self.name)
 
-        name = property(__get_name)
+        name = property(__get_name, __set_name)
         incoming = property(__get_incoming, __set_incoming)
         outgoing = property(__get_outgoing, __set_outgoing)
         data = property(__get_data)
 
     class Transition(object):
 
-        def __init__(self, name, from_state=None, to_state=None, data=None):
+        def __init__(self, name, from_state, to_state, data=None):
             self.__name = name
-            self.__from_state = set() if from_state is None else from_state
-            self.__to_state = set() if to_state is None else to_state
+            self.__from_state = from_state
+            self.__to_state = to_state
             self.__data = dict() if data is None else data
 
         def __get_name(self):
@@ -46,8 +49,14 @@ class TransitionSystem(object):
         def __get_to_state(self):
             return self.__to_state
 
+        def __set_to_state(self, to_state):
+            self.__to_state = to_state
+
         def __get_from_state(self):
             return self.__from_state
+
+        def __set_from_state(self, from_state):
+            self.__from_state = from_state
 
         def __get_data(self):
             return self.__data
@@ -56,8 +65,8 @@ class TransitionSystem(object):
             return str(self.name)
 
         name = property(__get_name)
-        from_state = property(__get_from_state)
-        to_state = property(__get_to_state)
+        from_state = property(__get_from_state, __set_from_state)
+        to_state = property(__get_to_state, __set_to_state)
         data = property(__get_data)
 
     def __init__(self, name=None, states=None, transitions=None):
