@@ -272,8 +272,9 @@ def scope_expand_trace(align, subtree, ret_tuple_as_trans_desc):
 
 
 def scope_expand(alignments, tree, m_tree, ret_tuple_as_trans_desc):
-    _, subtree, _ = pt_compare.pt_compare(tree, m_tree)
-    for align in alignments:
-        new_align = scope_expand_trace(align["alignment"], subtree, ret_tuple_as_trans_desc)
-        align["alignment"] = new_align
+    same, subtree, _ = pt_compare.pt_compare(tree, m_tree)
+    if not same:
+        for align in alignments:
+            new_align = scope_expand_trace(align["alignment"], subtree, ret_tuple_as_trans_desc)
+            align["alignment"] = new_align
     return alignments

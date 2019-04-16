@@ -255,9 +255,9 @@ def create_event_log(log):
 
 
 def example():
-    tree1 = pt_util.parse("X( *( X( c, d ), b, τ ), a )")
-    tree2 = pt_util.parse("X( *( τ, b, τ ), a )")
-    log = create_event_log(["ab"])
+    tree1 = pt_util.parse("X( a, b, τ)")
+    tree2 = pt_util.parse("X( a, b, τ)")
+    log = create_event_log(["d"])
     # log = create_event_log([ "d"])
     # net, initial_marking, final_marking = pt_to_net_with_op.apply_with_operator(tree1, {'PARAM_CHILD_LOCK': True})
     # parameters = pt_to_net_with_op.get_parameters(net)
