@@ -159,8 +159,7 @@ def apply_log(log, petri_net, initial_marking, final_marking, parameters=None, v
         # align_cost = align['cost'] // ali.utils.STD_MODEL_LOG_MOVE_COST
         # align['fitness'] = 1 - ((align['cost']  // ali.utils.STD_MODEL_LOG_MOVE_COST) / best_worst_cost)
         print(align['cost'], len(log[index]), best_worst_cost)
-        align['fitness'] = 1 - (
-                (align['cost'] // ali.utils.STD_MODEL_LOG_MOVE_COST) / (len(log[index]) + best_worst_cost))
+        align['fitness'] = 1 - (align['cost'] / (len(log[index])*alignments.utils.MODEL_LOG_MOVE_COST + best_worst_cost))
         # align['fitness'] = 1 - (align['cost'] / (len(log[index]) * 5 + best_worst_cost * 2)) if \
         #     not (log[index] == 0 and best_worst_cost == 0) else 1
     return alignments

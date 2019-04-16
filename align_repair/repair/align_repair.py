@@ -130,10 +130,9 @@ def recompute_fitness(alignments, log, tree, parameters, version='state_equation
     net, initial_marking, final_marking = process_to_net_wo.apply_with_operator(tree, parameters)
     best_worst_cost = ali.factory.VERSIONS_COST[version](net, initial_marking, final_marking, parameters)
     for index, align in enumerate(alignments):
-        align['fitness'] = 1 - (
-                (align['cost'] // ali.utils.STD_MODEL_LOG_MOVE_COST) / (len(log[index]) + best_worst_cost))
-        # align['fitness'] = 1 - align['cost'] / (len(log[index]) * 5 + best_worst_cost * 2) if \
-        #     not (len(log[index]) == 0 and best_worst_cost == 0) else 1
+        align['fitness'] = 1 - align['cost'] / (len(log[index]) * 5 + best_worst_cost * 2) if \
+            not (len(log[index]) == 0 and best_worst_cost == 0) else 1
+
 
 def apply_pt_alignments(log, tree, parameters):
     net, initial_marking, final_marking = process_to_net_wo.apply_with_operator(tree, parameters)
