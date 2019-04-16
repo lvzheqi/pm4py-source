@@ -28,7 +28,7 @@ from pm4py.objects.petri.utils import construct_trace_net_cost_aware
 from pm4py.util.constants import PARAMETER_CONSTANT_ACTIVITY_KEY
 from pm4py.util.lp import factory as lp_solver_factory
 import sys
-
+from copy import copy
 
 PARAM_TRACE_COST_FUNCTION = 'trace_cost_function'
 PARAM_MODEL_COST_FUNCTION = 'model_cost_function'
@@ -61,14 +61,15 @@ def get_best_worst_cost(petri_net, initial_marking, final_marking, parameters=No
         Best worst cost of alignment
     """
     trace = log_implementation.Trace()
-    if PARAM_TRACE_COST_FUNCTION not in parameters:
-        parameters[PARAM_TRACE_COST_FUNCTION] = list(
+    new_parameters = copy(parameters)
+    if PARAM_TRACE_COST_FUNCTION not in new_parameters or len(new_parameters[PARAM_TRACE_COST_FUNCTION]) < len(trace):
+        new_parameters[PARAM_TRACE_COST_FUNCTION] = list(
             map(lambda e: alignments.utils.STD_MODEL_LOG_MOVE_COST, trace))
 
     best_worst = pm4py.algo.conformance.alignments.versions.state_equation_a_star.apply(trace,
                                                                                         petri_net, initial_marking,
                                                                                         final_marking,
-                                                                                        parameters=parameters)
+                                                                                        parameters=new_parameters)
 
     return best_worst['cost']
 
