@@ -258,6 +258,13 @@ def example():
     tree1 = pt_util.parse("X( a, τ)")
     tree2 = pt_util.parse("X( a, τ)")
     log = create_event_log([""])
+    net, initial_marking, final_marking = pt_to_net_with_op.apply_with_operator(tree1, {'PARAM_CHILD_LOCK': True})
+    parameters = pt_to_net_with_op.get_parameters(net)
+    parameters['PARAM_CHILD_LOCK'] = True
+
+    alignments = align_factory.apply_log(log, net, initial_marking, final_marking,
+                                         parameters=pt_to_net_with_op.get_parameters(net))
+    print_short_alignment(alignments)
     # log = create_event_log([ "d"])
     # net, initial_marking, final_marking = pt_to_net_with_op.apply_with_operator(tree1, {'PARAM_CHILD_LOCK': True})
     # parameters = pt_to_net_with_op.get_parameters(net)
@@ -266,8 +273,8 @@ def example():
     # print_short_alignment(alignments)
 
     # log = create_non_fitting_eventlog(tree2, 100, 0.7)
-    result = compute_cost_and_time(tree1, tree2, log)
-    print_tree_align_compare(result)
+    # result = compute_cost_and_time(tree1, tree2, log)
+    # print_tree_align_compare(result)
 
 
 def print_tree_align_compare(result):
