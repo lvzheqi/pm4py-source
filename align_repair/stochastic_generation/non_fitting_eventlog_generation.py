@@ -1,10 +1,11 @@
 import random
 
-from align_repair.pt_manipulate import pt_number
 from pm4py.objects.process_tree.semantics import generate_log
 from pm4py.objects.log.log import Trace, EventLog, Event
 from pm4py.objects.log.util import xes
+
 from align_repair.stochastic_generation.stochastic_pt_generation import get_cur_label
+from align_repair.pt_manipulate import utils as pt_utils
 
 
 def create_non_fitting_eventlog(tree, no, prob):
@@ -26,7 +27,7 @@ def create_non_fitting_eventlog(tree, no, prob):
         Non-fitting Eventlog
     """
     log, non_fit_traces = generate_log(tree, no), list()
-    label_num = len(pt_number.get_leaves_labels(tree))
+    label_num = pt_utils.get_non_none_leaves_number(tree)
     for trace in log:
         non_fit_t = Trace(attributes=log.attributes)
         for event in trace:
@@ -46,9 +47,3 @@ def create_non_fitting_eventlog(tree, no, prob):
         non_fit_traces.append(non_fit_t)
     return EventLog(non_fit_traces, attributes=log.attributes, classifiers=log.classifiers,
                     omni_present=log.omni_present, extensions=log.extensions)
-
-
-
-
-
-

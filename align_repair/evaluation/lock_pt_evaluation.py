@@ -1,0 +1,80 @@
+"""
+This module compares the time of alignment on PetriNet with Lock or without Lock.
+And returns the histogram of the comparison.
+"""
+import time
+import random
+
+from align_repair.evaluation import alignment_on_lock_pt, alignment_on_pt
+from align_repair.stochastic_generation.stochastic_pt_generation import randomly_create_new_tree
+from align_repair.stochastic_generation.non_fitting_eventlog_generation import create_non_fitting_eventlog
+
+
+def avg_runtime_without_lock(trees, logs):
+    start = time.time()
+    for i, tree in enumerate(trees):
+        alignment_on_pt(tree, logs[i])
+    end = time.time()
+    print((end - start) / len(trees))
+    return (end - start) / len(trees)
+
+
+def avg_runtime_with_lock(trees, logs):
+    start = time.time()
+    for i, tree in enumerate(trees):
+        alignment_on_lock_pt(tree, logs[i])
+    end = time.time()
+    print((end - start) / len(trees))
+    return (end - start) / len(trees)
+
+
+def plot_histogram_lock_runtime(list1, list2):
+    """
+    Compared the time of alignment of PT with lock and without lock
+    """
+    import matplotlib.pyplot as plt
+
+    label_list = ["10-15", "16-20", "21-25", "26-30"]
+    # label_list = ["10-15", "16-20", "21-25", "26-30", "31-33", "34-35"]
+    x = range(len(list1))
+    plt.bar(x=x, height=list1, width=0.4, alpha=0.8, color="red", label="without Lock")
+    plt.bar(x=[i + 0.4 for i in x], height=list2, width=0.4, color="green", label="with Lock")
+    plt.xlabel("Number of Node")
+    plt.ylabel("Time(Seconds)")
+    plt.xticks([i + 0.2 for i in x], label_list)
+    plt.title("Compare Runtime of Alignment with/-out Lock")
+    plt.legend()
+    # for rect in rects1:
+    #     height = rect.get_height()
+    #     plt.text(rect.get_x() + rect.get_width() / 2, height + 1, str(height), ha="center", va="bottom")
+    # for rect in rects2:
+    #     height = rect.get_height()
+    #     plt.text(rect.get_x() + rect.get_width() / 2, height + 1, str(height), ha="center", va="bottom")
+    plt.savefig("ComparePNTime")
+
+
+def compute_run_time():
+    no_tree, no_event, pro = 1, 1, 0.8
+    tree1 = [randomly_create_new_tree(random.randint(11, 15)) for _ in range(no_tree)]
+    log1 = [create_non_fitting_eventlog(tree, no_event, pro) for tree in tree1]
+    tree2 = [randomly_create_new_tree(random.randint(16, 20)) for _ in range(no_tree)]
+    log2 = [create_non_fitting_eventlog(tree, no_event, pro) for tree in tree2]
+    tree3 = [randomly_create_new_tree(random.randint(21, 25)) for _ in range(no_tree)]
+    log3 = [create_non_fitting_eventlog(tree, no_event, pro) for tree in tree3]
+    tree4 = [randomly_create_new_tree(random.randint(26, 30)) for _ in range(no_tree)]
+    log4 = [create_non_fitting_eventlog(tree, no_event, pro) for tree in tree4]
+    # tree5 = [randomly_create_new_tree(random.randint(31, 33)) for _ in range(no_tree)]
+    # log5 = [create_non_fitting_eventlog(tree, no_event, pro) for tree in tree5]
+    # tree6 = [randomly_create_new_tree(random.randint(34, 35)) for _ in range(no_tree)]
+    # log6 = [create_non_fitting_eventlog(tree, no_event, pro) for tree in tree6]
+    l_without_lock = list(map(lambda tree_log: avg_runtime_without_lock(tree_log[0], tree_log[1]),
+                              [(tree1, log1), (tree2, log2), (tree3, log3), (tree4, log4)]))
+    # [(tree1, log1), (tree2, log2), (tree3, log3), (tree4, log4), (tree5, log5), (tree6, log6)]))
+    l_with_lock = list(map(lambda tree_log: avg_runtime_with_lock(tree_log[0], tree_log[1]),
+                           [(tree1, log1), (tree2, log2), (tree3, log3), (tree4, log4)]))
+    # [(tree1, log1), (tree2, log2), (tree3, log3), (tree4, log4), (tree5, log5), (tree6, log6)]))
+    plot_histogram_lock_runtime(l_without_lock, l_with_lock)
+
+
+if __name__ == "__main__":
+    compute_run_time()

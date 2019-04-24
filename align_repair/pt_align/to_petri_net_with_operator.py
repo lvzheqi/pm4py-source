@@ -1,4 +1,5 @@
 import time
+
 from pm4py.algo.discovery.inductive.util.petri_el_count import Counts
 from pm4py.objects import petri
 from pm4py.objects.petri.petrinet import Marking
@@ -6,39 +7,11 @@ from pm4py.algo.discovery.inductive.versions.dfg.util.petri_el_add import get_ne
     get_transition
 from pm4py.objects.petri.petrinet import PetriNet
 from pm4py.objects.process_tree.pt_operator import Operator
-from pm4py.algo.conformance.alignments.versions.state_equation_a_star import PARAM_MODEL_COST_FUNCTION, \
-    PARAM_SYNC_COST_FUNCTION, PARAM_ALIGNMENT_RESULT_IS_SYNC_PROD_AWARE
-from pm4py.algo.conformance.alignments.utils import STD_MODEL_LOG_MOVE_COST, STD_SYNC_COST, STD_TAU_COST
+
 from align_repair.pt_manipulate.utils import LOCK_START, LOCK_END
 
 SOURCE_NAME = "source"
 SINK_NAME = "SINK"
-
-
-def get_parameters(net):
-    model_cost_function, sync_cost_function = dict(), dict()
-    for t in net.transitions:
-        if t.label is not None and not t.label.endswith(LOCK_START) and not t.label.endswith(LOCK_END):
-            model_cost_function[t] = 2
-            sync_cost_function[t] = STD_SYNC_COST
-        else:
-            model_cost_function[t] = STD_SYNC_COST
-
-    return {PARAM_MODEL_COST_FUNCTION: model_cost_function, PARAM_SYNC_COST_FUNCTION: sync_cost_function,
-            PARAM_ALIGNMENT_RESULT_IS_SYNC_PROD_AWARE: True}
-
-
-# def get_parameters(net):
-#     model_cost_function, sync_cost_function = dict(), dict()
-#     for t in net.transitions:
-#         if t.label is not None and not t.label.endswith(LOCK_START) and not t.label.endswith(LOCK_END):
-#             model_cost_function[t] = STD_MODEL_LOG_MOVE_COST
-#             sync_cost_function[t] = STD_SYNC_COST
-#         else:
-#             model_cost_function[t] = STD_TAU_COST
-#
-#     return {PARAM_MODEL_COST_FUNCTION: model_cost_function, PARAM_SYNC_COST_FUNCTION: sync_cost_function,
-#             PARAM_ALIGNMENT_RESULT_IS_SYNC_PROD_AWARE: True}
 
 
 def recursively_get_node_index(tree, index, node_end):
@@ -232,7 +205,7 @@ def apply_with_operator(tree, parameters=None):
     net.places.add(sink)
     initial_marking[source] = 1
     final_marking[sink] = 1
-    param_child_lick = parameters['PARAM_CHILD_LOCK'] if parameters is not None else False
+    param_child_lick = parameters['PARAM_CHILD_LOCK'] if parameters is not None else True
     generate_pn(tree, net, source, sink, counts, param_child_lick)
 
     return net, initial_marking, final_marking

@@ -3,5 +3,3 @@
 # 2. None --  SKIP (注意判断)
 
 # give one alignment, remove lock (consider None)
-
-

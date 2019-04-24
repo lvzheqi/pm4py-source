@@ -43,7 +43,7 @@ def create_pt_of_three_node(root, op):
     child1.parent = root
     child2.parent = root
     if op == Operator.LOOP:
-        root.children.append(ProcessTree())
+        root.children.append(ProcessTree(None, root, None, None))
     return [child1, child2]
 
 
@@ -58,16 +58,14 @@ def create_new_binary_process_tree(no_number):
 
     Returns
     ------------
-    boolean
-        True if the PT could be built
     tree
-        Process Tree
+        Process Tree (None, if there no normal process tree with such node)
     """
     root = ProcessTree()
     if no_number == 1:
-        return True, ProcessTree(None, None, None, 'a')
+        return ProcessTree(None, None, None, 'a')
     if no_number == 2:
-        return False, None
+        return None
     operators, enable, cur_num = [_ for _ in Operator], [root], 1
     while cur_num + 3 <= no_number:
         node = enable.pop(random.randint(0, len(enable)-1))
@@ -89,7 +87,8 @@ def create_new_binary_process_tree(no_number):
                 flag = True
                 break
         while not flag:
-            flag, root = create_new_binary_process_tree(no_number)
+            root = create_new_binary_process_tree(no_number)
+            flag = False if root is None else True
             print('could not create a tree, try again!!! Maybe infinite!!!')
     elif no_number - cur_num == 2:  # must differ with parent and not equal LOOP
         node = enable.pop(random.randint(0, len(enable) - 1))
@@ -101,7 +100,7 @@ def create_new_binary_process_tree(no_number):
         enable += children
 
     add_label_to_leaf(enable)
-    return True, root
+    return root
 
 
 def randomly_create_new_tree(no_number):
@@ -118,6 +117,6 @@ def randomly_create_new_tree(no_number):
     tree
         Process Tree
     """
-    success, tree = create_new_binary_process_tree(no_number)
-    parse_to_general_tree(tree) if success else None
-    return success, tree
+    tree = create_new_binary_process_tree(no_number)
+    parse_to_general_tree(tree) if tree is not None else None
+    return tree

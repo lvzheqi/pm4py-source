@@ -1,7 +1,7 @@
 from pm4py.objects.process_tree.pt_operator import Operator
 
 
-# False
+# False, need to delete
 
 def get_children_labels(tree, index, labels, node_end):
     cur_pos = index

@@ -66,12 +66,10 @@ def get_best_worst_cost(petri_net, initial_marking, final_marking, parameters=No
     if PARAM_TRACE_COST_FUNCTION not in new_parameters or len(new_parameters[PARAM_TRACE_COST_FUNCTION]) < len(trace):
         new_parameters[PARAM_TRACE_COST_FUNCTION] = list(
             map(lambda e: alignments.utils.STD_MODEL_LOG_MOVE_COST, trace))
-
     best_worst = pm4py.algo.conformance.alignments.versions.state_equation_a_star.apply(trace,
                                                                                         petri_net, initial_marking,
                                                                                         final_marking,
                                                                                         parameters=new_parameters)
-
     return best_worst['cost']
 
 

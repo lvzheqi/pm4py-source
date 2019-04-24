@@ -1,15 +1,18 @@
+"""
+This module provides the methods of alignment repair.
+'ret_tuple_as_trans_desc' state of the given alignment should be True.
+In that way we distinguish the status of silent transition. The repaired Alignment could then make sense.
+"""
 import copy
-from typing import Any
 
-import pm4py
-from align_repair.pt_manipulate import pt_number, pt_compare
-from align_repair.pt_align import to_petri_net_with_operator as process_to_net_wo
 from pm4py.algo.conformance.alignments import factory as align_factory
 from pm4py.objects.log.log import Trace, EventLog
 from pm4py.algo.conformance import alignments as ali
 from pm4py.algo.conformance.alignments.versions.state_equation_a_star import PARAM_ALIGNMENT_RESULT_IS_SYNC_PROD_AWARE
-from align_repair.pt_manipulate.utils import is_node_end, is_node_start, is_move_model, is_move_log,\
-    compare_log_move, check_tuple_belong_to_subtree
+
+from align_repair.pt_manipulate import pt_compare, pt_number
+from align_repair.pt_manipulate import utils as pt_mani_utils
+from align_repair.pt_align import to_petri_net_with_operator as pt_to_net_with_op, utils as pt_align_utils
 
 
 class Scope(object):
@@ -33,7 +36,7 @@ class Scope(object):
     anchor_index = property(_get_anchor_index)
 
 
-def detect_change_scope(align, subtree, trace, ret_tuple_as_trans_desc):
+def detect_change_scope(align, subtree, trace):
     """
     Return the change scope in the alignment
 
@@ -45,7 +48,6 @@ def detect_change_scope(align, subtree, trace, ret_tuple_as_trans_desc):
         the subtree that need to be detected
     trace
         the original trace
-    ret_tuple_as_trans_desc
 
     Returns
     -----------
@@ -55,61 +57,60 @@ def detect_change_scope(align, subtree, trace, ret_tuple_as_trans_desc):
     """
 
     scope, index, e_index = Scope(), 0, 0
-    children = pt_number.get_leaves_labels(subtree)
+    children = pt_mani_utils.get_non_none_leaves_labels(subtree)
     while True:
         if index == len(align):
             break
 
-        if is_node_start(align[index], subtree, ret_tuple_as_trans_desc):
+        if pt_mani_utils.is_node_start(align[index], subtree, True):
             scope.index_append(index)
             new_trace = Trace()
-            while not is_node_end(align[index], subtree, ret_tuple_as_trans_desc):
-                if is_move_log(align[index], ret_tuple_as_trans_desc) or \
-                    (check_tuple_belong_to_subtree(align[index], children, ret_tuple_as_trans_desc)
-                     and not is_move_model(align[index], ret_tuple_as_trans_desc)):
+            while not pt_mani_utils.is_node_end(align[index], subtree, True):
+                if pt_mani_utils.is_log_move(align[index], True) or \
+                    (pt_mani_utils.check_model_label_belong_to_subtree(align[index], children, True)
+                     and not pt_mani_utils.is_model_move(align[index], True)):
                     new_trace.append(trace[e_index])
-                e_index = e_index + 1 if not is_move_model(align[index], ret_tuple_as_trans_desc) else e_index
+                e_index = e_index + 1 if not pt_mani_utils.is_model_move(align[index], True) else e_index
                 index += 1
             scope.traces_append(new_trace)
-        e_index = e_index + 1 if not is_move_model(align[index], ret_tuple_as_trans_desc) else e_index
+        e_index = e_index + 1 if not pt_mani_utils.is_model_move(align[index], True) else e_index
         index += 1
     return scope
 
 
-def alignment_reassemble(align, sub_aligns, anchor_index, subtree1, ret_tuple_as_trans_desc):
+def alignment_reassemble(align, sub_aligns, anchor_index, subtree1):
     for i in range(len(anchor_index) - 1, -1, -1):
+        sub_aligns[i] = copy.deepcopy(sub_aligns[i])
         sub_align = sub_aligns[i]['alignment']
         index = anchor_index[i]
-
         align[index] = sub_align.pop(0)
         index += 1
         while True:
-            children = pt_number.get_all_labels(subtree1)
+            labels_in_subtree1 = pt_mani_utils.get_lock_tree_labels(subtree1)
             if len(sub_align) <= 1:
-                while not is_node_end(align[index], subtree1, ret_tuple_as_trans_desc):
-                    if is_move_log(align[index], ret_tuple_as_trans_desc) \
-                            or check_tuple_belong_to_subtree(align[index], children, ret_tuple_as_trans_desc):
+                while not pt_mani_utils.is_node_end(align[index], subtree1, True):
+                    if pt_mani_utils.is_log_move(align[index], True) or \
+                            pt_mani_utils.check_model_label_belong_to_subtree(align[index], labels_in_subtree1, True):
                         align.pop(index)
                     else:
                         index += 1
-                if len(sub_align) == 1:
-                    align[index] = sub_align.pop(0)
+                align[index] = sub_align.pop(0) if len(sub_align) == 1 else None
                 break
 
-            if is_node_end(align[index], subtree1, ret_tuple_as_trans_desc):
+            if pt_mani_utils.is_node_end(align[index], subtree1, True):
                 while len(sub_align) > 1:
                     align.insert(index, sub_align.pop(0))
                     index += 1
                 align[index] = sub_align.pop(0)
                 break
 
-            if is_move_model(sub_align[0], ret_tuple_as_trans_desc):
+            if pt_mani_utils.is_model_move(sub_align[0], True):
                 align.insert(index, sub_align.pop(0))
                 index += 1
-            elif compare_log_move(align[index], sub_align[0], ret_tuple_as_trans_desc):
+            elif pt_mani_utils.compare_log_label(align[index], sub_align[0], True):
                 align[index] = sub_align.pop(0)
                 index += 1
-            elif check_tuple_belong_to_subtree(align[index], children, ret_tuple_as_trans_desc):
+            elif pt_mani_utils.check_model_label_belong_to_subtree(align[index], labels_in_subtree1, True):
                 align.pop(index)
             else:
                 index += 1
@@ -117,30 +118,31 @@ def alignment_reassemble(align, sub_aligns, anchor_index, subtree1, ret_tuple_as
 
 def recompute_cost(align, sub_aligns_before, sub_aligns_after):
     for i in range(len(sub_aligns_after)):
-        align['cost'] = align['cost'] - sub_aligns_before[i]['cost'] + sub_aligns_after[i]['cost']
-        align['visited_states'] = align['visited_states'] - sub_aligns_before[i]['visited_states'] + sub_aligns_after[i][
-            'visited_states']
-        align['queued_states'] = align['queued_states'] - sub_aligns_before[i]['queued_states'] + sub_aligns_after[i][
-            'queued_states']
-        align['traversed_arcs'] = align['traversed_arcs'] - sub_aligns_before[i]['traversed_arcs'] + sub_aligns_after[i][
-            'traversed_arcs']
+        align['cost'] += sub_aligns_after[i]['cost'] - sub_aligns_before[i]['cost']
+        align['visited_states'] += sub_aligns_after[i]['visited_states'] - sub_aligns_before[i]['visited_states']
+        align['queued_states'] += sub_aligns_after[i]['queued_states'] - sub_aligns_before[i]['queued_states']
+        align['traversed_arcs'] += sub_aligns_after[i]['traversed_arcs'] - sub_aligns_before[i]['traversed_arcs']
 
 
-def recompute_fitness(alignments, log, tree, parameters, version='state_equation_a_star'):
-    net, initial_marking, final_marking = process_to_net_wo.apply_with_operator(tree, parameters)
-    best_worst_cost = ali.factory.VERSIONS_COST[version](net, initial_marking, final_marking, parameters)
-    for index, align in enumerate(alignments):
-        align['fitness'] = 1 - align['cost'] / (len(log[index]) * 5 + best_worst_cost * 2) if \
-            not (len(log[index]) == 0 and best_worst_cost == 0) else 1
+def recompute_fitness(align, trace, best_worst_cost):
+    unfitness_upper_part = align['cost']
+    if unfitness_upper_part == 0:
+        align['fitness'] = 1
+    elif (len(trace) + best_worst_cost) > 0:
+        align['fitness'] = 1 - align['cost'] / (
+                len(trace) * ali.utils.STD_MODEL_LOG_MOVE_COST + best_worst_cost)
+    else:
+        align['fitness'] = 0
 
 
-def apply_pt_alignments(log, tree, parameters):
-    net, initial_marking, final_marking = process_to_net_wo.apply_with_operator(tree, parameters)
-    parameters = process_to_net_wo.get_parameters(net) if parameters is not None else None
-    return align_factory.apply_log(log, net, initial_marking, final_marking, parameters=parameters)
+def apply_pt_alignments(log, tree):
+    net, initial_marking, final_marking = pt_to_net_with_op.apply_with_operator(tree)
+    new_parameters = pt_align_utils.get_parameters(net)
+    new_parameters[PARAM_ALIGNMENT_RESULT_IS_SYNC_PROD_AWARE] = True
+    return align_factory.apply_log(log, net, initial_marking, final_marking, new_parameters)
 
 
-def alignment_repair_with_operator(tree1, tree2, log, parameters=None):
+def alignment_repair_with_operator_align(tree1, tree2, log, alignments):
     """
     Alignment repair on tree2 based on the alignment of log on tree1
 
@@ -152,82 +154,38 @@ def alignment_repair_with_operator(tree1, tree2, log, parameters=None):
             Process Tree
         log
             EventLog
-        parameters
-            Parameters for alignment
+        alignments
+            related alignment of log on tree1
 
     Returns
     ------------
     alignments
         repaired alignments
     """
-    # RELABEL
-    pt_number.dfs_number(tree1)
-    pt_number.dfs_number(tree2)
-    alignments = apply_pt_alignments(log, tree1, parameters)
-    align_orig = copy.deepcopy(alignments)
-    same, subtree1, subtree2 = pt_compare.pt_compare(tree1, tree2)
-    # pt_number.dfs_number(subtree2, n1 + 1)
-    ret_tuple_as_trans_desc = parameters[PARAM_ALIGNMENT_RESULT_IS_SYNC_PROD_AWARE] if parameters is not None else False
-    if same:
+    # TODO: if the given alignment is not True, try-catch
+    alignments = copy.deepcopy(alignments)
+    com_res = pt_compare.pt_compare(tree1, tree2)
+    tree1_total_number = pt_mani_utils.get_pt_nodes_number(tree1)
+    pt_number.pt_number(com_res.subtree2, 'D', tree1_total_number + 1)
+    if com_res.value:
         return alignments
     else:
-        for i, align in enumerate(alignments):
-            scope = detect_change_scope(align['alignment'], subtree1, log[i], ret_tuple_as_trans_desc)
-            sub_aligns_before = apply_pt_alignments(EventLog(scope.traces), subtree1, parameters)
-            sub_aligns_after = apply_pt_alignments(EventLog(scope.traces), subtree2, parameters)
-            alignment_reassemble(align['alignment'], sub_aligns_after, scope.anchor_index, subtree1, ret_tuple_as_trans_desc)
-            recompute_cost(align, sub_aligns_before, sub_aligns_after)
-    recompute_fitness(alignments, log, tree2, parameters)
-    # for i in range(len(alignments)):
-    #     for t in log:
-    #         for e in t:
-    #             print(e[pm4py.objects.log.util.xes.DEFAULT_NAME_KEY], end=", ")
-    #     print()
-    #     print(align_orig[i])
-    #     print(alignments[i])
-    #     print()
+        best_worst_cost = apply_pt_alignments(EventLog([Trace()]), tree2)[0]['cost']
+        for i in range(len(alignments)):
+            align = alignments[i]
+            if align.get("repair") is None:
+                scope = detect_change_scope(align['alignment'], com_res.subtree1, log[i])
+                # case 1: len(scope.traces) == 0
+                # case 2: scope.traces = None and subtree = None
+                if not len(scope.traces) == 0:
+                        # (len(scope.traces[0]) == 0 and com_res.subtree2.operator is None
+                        #  and com_res.subtree2.label is None)):
+                    sub_aligns_before = apply_pt_alignments(EventLog(scope.traces), com_res.subtree1)
+                    sub_aligns_after = apply_pt_alignments(EventLog(scope.traces), com_res.subtree2)
+                    alignment_reassemble(align['alignment'], sub_aligns_after, scope.anchor_index, com_res.subtree1)
+                    recompute_cost(align, sub_aligns_before, sub_aligns_after)
+                    recompute_fitness(align, log[i], best_worst_cost)
+                align["repair"] = True
+        for a in alignments:
+            a.pop("repair") if a.get("repair") is not None else None
     return alignments
-
-
-def alignment_repair_with_operator_align(tree1, tree2, log, alignments, parameters=None):
-    """
-    Alignment repair on tree2 based on the alignment of log on tree1
-
-    Parameters
-    -----------
-        tree1
-            Process Tree
-        tree2
-            Process Tree
-        log
-            EventLog
-        parameters
-            Parameters for alignment
-
-    Returns
-    ------------
-    alignments
-        repaired alignments
-    """
-
-    ret_tuple_as_trans_desc = parameters[PARAM_ALIGNMENT_RESULT_IS_SYNC_PROD_AWARE] if parameters is not None else False
-    same, subtree1, subtree2 = pt_compare.pt_compare(tree1, tree2)
-    if same:
-        return alignments
-    else:
-        for i, align in enumerate(alignments):
-            scope = detect_change_scope(align['alignment'], subtree1, log[i], ret_tuple_as_trans_desc)
-            # case 1: len(scope.traces) == 0
-            # case 2: scope.traces = None and subtree = None
-            if not (len(scope.traces) == 0 or
-                    (len(scope.traces[0]) == 0 and subtree2.operator is None and subtree2.label is None)):
-                sub_aligns_before = apply_pt_alignments(EventLog(scope.traces), subtree1, parameters)
-                sub_aligns_after = apply_pt_alignments(EventLog(scope.traces), subtree2, parameters)
-                alignment_reassemble(align['alignment'], sub_aligns_after, scope.anchor_index, subtree1, ret_tuple_as_trans_desc)
-                recompute_cost(align, sub_aligns_before, sub_aligns_after)
-        recompute_fitness(alignments, log, tree2, parameters)
-    return alignments
-
-
-def alignment_repair_wo_operator(tree1, tree2, log):
-    pass

@@ -1,5 +1,5 @@
 from pm4py.objects.process_tree.pt_operator import Operator
-from align_repair.pt_manipulate.pt_compare import normal_pt_compare
+from align_repair.pt_manipulate.pt_compare import pt_compare
 
 
 def merge_child_to_node(node):
@@ -64,8 +64,8 @@ def remove_repeat_child(node):
         children = list()
         for i in range(len(node.children) - 1, -1, -1):
             for child in children:
-                same, _, _ = normal_pt_compare(node.children[i], child)
-                if not same:
+                com_res = pt_compare(node.children[i], child)
+                if not com_res.value:
                     children.append(node.children[i])
                 else:
                     node.children.pop(i)
@@ -117,37 +117,6 @@ def parse_to_general_tree(tree):
     tree
         process tree
     """
+    # TODO: consider loop with more than 3 or less than 3
     recursively_to_general_tree(tree)
-
-
-def parse_to_general_tree_bfs(tree):
-    """
-    Conversion the given process tree to a general process tree, e.g.->(a,->(b,c)) = ->(a,b,c)
-    BFS -- not so good, which does't consider repeatable NONE label
-
-    Parameters
-    -----------
-    tree
-        process tree
-    """
-    q = list()
-    q.append(tree)
-    while len(q) != 0:
-        node = q.pop(0)
-        while len(node.children) == 1:
-            node.label = node.children[0].label
-            node.operator = node.children[0].operator
-            node.children = node.children[0].children
-        children = node.children[:]
-        while len(children) > 0:
-            child = children.pop(0)
-            if node.operator == child.operator and node.operator != Operator.LOOP:
-                index = node.children.index(child)
-                node.children.pop(index)
-                for i in range(len(child.children)-1, -1, -1):
-                    node.children.insert(index, child.children[i])
-                    child.children[i].parent = node
-                    children.append(child.children[i])
-            else:
-                q.append(child)
 

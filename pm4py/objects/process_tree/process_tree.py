@@ -1,6 +1,3 @@
-from pm4py.objects.process_tree.pt_operator import Operator
-
-
 class ProcessTree(object):
 
     def __init__(self, operator=None, parent=None, children=None, label=None, index=0):

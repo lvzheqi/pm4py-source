@@ -93,24 +93,21 @@ def find_left_border(node, align, cur_pos, bound):
         return 0
 
     if pt_utils.is_node_end(align[index], node, True):
-        flag = 0
-        children = pt_utils.get_lock_tree_labels(node)
         while not pt_utils.is_node_start(align[index], node, True):
+            index -= 1
+
+        index_s = find_left_border(node, align, index, bound) if index > bound else bound
+
+        index = cur_pos
+        children = pt_utils.get_lock_tree_labels(node)
+        while index != index_s:
             if not pt_utils.check_model_label_belong_to_subtree(align[index], children, True):
                 move_move(align, index, cur_pos)
                 cur_pos -= 1
-            elif pt_utils.is_sync_move(align[index], True) or index == bound:
-                flag = 1
+            elif pt_utils.is_sync_move(align[index], True):
                 break
             index -= 1
-        if flag == 0:
-            block_length = cur_pos - index
-            index = find_left_border(node, align, index, bound)
-            for i in range(block_length):
-                move_move(align, cur_pos, index + 1)
-            return index + block_length
-        else:
-            return cur_pos
+        return cur_pos
 
     elif pt_utils.is_node_start(align[index], node, True):
         # parent is not NONE, otherwise index = 0
@@ -141,6 +138,7 @@ def find_left_border(node, align, cur_pos, bound):
 
             else:   # second child
                 index = find_next_left_border(align, index, node.parent.children[0], 0, bound)
+
     move_move(align, cur_pos, index + 1)
     return index + 1
 
@@ -167,24 +165,21 @@ def find_right_border(node, align, cur_pos, bound):
         return len(align) - 1
 
     if pt_utils.is_node_start(align[index], node, True):
-        flag = 0
-        children = pt_utils.get_lock_tree_labels(node)
         while not pt_utils.is_node_end(align[index], node, True):
+            index += 1
+
+        index_s = find_right_border(node, align, index, bound) if index < bound else bound
+
+        flag, index = 0, cur_pos
+        children = pt_utils.get_lock_tree_labels(node)
+        while index != index_s:
             if not pt_utils.check_model_label_belong_to_subtree(align[index], children, True):
                 move_move(align, index, cur_pos)
                 cur_pos += 1
-            elif pt_utils.is_sync_move(align[index], True) or index == bound:
-                flag = 1
+            elif pt_utils.is_sync_move(align[index], True):
                 break
             index += 1
-        if flag == 0:
-            block_length = index - cur_pos
-            index = find_right_border(node, align, index, bound)
-            for i in range(block_length):
-                move_move(align, cur_pos, index - 1)
-            return index - block_length
-        else:
-            return cur_pos
+        return cur_pos
 
     elif pt_utils.is_node_end(align[index], node, True):
         # parent is not NONE, otherwise index = 0
@@ -247,7 +242,7 @@ def scope_expand_trace(align, subtree):
     return align
 
 
-def scope_expand(alignments, tree, m_tree):
+def general_scope_expand(alignments, tree, m_tree):
     alignments = copy.deepcopy(alignments)
     com_res = pt_compare.pt_compare(tree, m_tree)
     if not com_res.value:
