@@ -6,11 +6,12 @@ from pm4py.objects.process_tree import util as pt_util
 from align_repair.repair.general_scope_expand import general_scope_expand
 from align_repair.repair.scope_expand import scope_expand
 from align_repair.pt_manipulate import pt_number
-from align_repair.evaluation import create_event_log, alignment_on_lock_pt
+from align_repair.evaluation import alignment_on_lock_pt
 from align_repair.stochastic_generation.stochastic_mutated_pt import randomly_create_mutated_tree
 from align_repair.stochastic_generation.stochastic_pt_generation import randomly_create_new_tree
 from align_repair.repair.align_repair import alignment_repair_with_operator_align
 from align_repair.stochastic_generation.non_fitting_eventlog_generation import create_non_fitting_eventlog
+
 
 class ScopeExpandTest(unittest.TestCase):
     def test_scope_expand1(self):
@@ -160,7 +161,7 @@ class ScopeExpandTest(unittest.TestCase):
         self.assertEqual(str(g_s_align), str(e_g_s_align))
 
     def test_two_scope_cost(self):
-        for _ in range(100):
+        for _ in range(10):
             tree1 = randomly_create_new_tree(random.randint(5, 15))
             tree2 = randomly_create_mutated_tree(tree1)
             log = create_non_fitting_eventlog(tree2, 1, 0.8)

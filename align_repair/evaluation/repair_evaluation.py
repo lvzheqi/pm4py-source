@@ -1,6 +1,6 @@
 import time
 import random
-import copy
+# import copy
 
 from pm4py.algo.conformance import alignments as ali
 from pm4py.objects.process_tree import util as pt_util
@@ -34,21 +34,21 @@ def compute_cost_and_time(tree, m_tree, log):
     best_worst_cost = sum([get_best_cost_on_pt(tree) + len(trace) * ali.utils.STD_MODEL_LOG_MOVE_COST for trace in log])
 
     start = time.time()
-    repair_alignments = alignment_repair_with_operator_align(tree, m_tree, log, copy.deepcopy(alignments))
+    repair_alignments = alignment_repair_with_operator_align(tree, m_tree, log, alignments)
     end = time.time()
     repaired_time = end - start
     repaired_cost = sum([align['cost'] for align in repair_alignments])
 
     start = time.time()
-    scope_aligns = scope_expand(copy.deepcopy(alignments), tree, m_tree)
-    scope_repaired_alignments = alignment_repair_with_operator_align(tree, m_tree, log, copy.deepcopy(scope_aligns))
+    scope_aligns = scope_expand(alignments, tree, m_tree)
+    scope_repaired_alignments = alignment_repair_with_operator_align(tree, m_tree, log, scope_aligns)
     end = time.time()
     scope_repaired_time = end - start
     scope_repaired_cost = sum([align['cost'] for align in scope_repaired_alignments])
 
     start = time.time()
-    scope_aligns = general_scope_expand(copy.deepcopy(alignments), tree, m_tree)
-    g_scope_repaired_alignments = alignment_repair_with_operator_align(tree, m_tree, log, copy.deepcopy(scope_aligns))
+    scope_aligns = general_scope_expand(alignments, tree, m_tree)
+    g_scope_repaired_alignments = alignment_repair_with_operator_align(tree, m_tree, log, scope_aligns)
     end = time.time()
     g_scope_repaired_time = end - start
     g_scope_repaired_cost = sum([align['cost'] for align in g_scope_repaired_alignments])
@@ -71,18 +71,18 @@ def compute_cost_and_time(tree, m_tree, log):
 def alignment_quality_log_based_on_tree1():
     file = Workbook(encoding='utf-8')
 
-    # creat_non_fitting_based_on_tree1(file, "Node11-15", [11, 15])
+    creat_non_fitting_based_on_tree1(file, "Node11-15", [11, 15])
     # creat_non_fitting_based_on_tree1(file, "Node16-20", [16, 20])
     # creat_non_fitting_based_on_tree1(file, "Node21-25", [21, 25])
-    creat_non_fitting_based_on_tree1(file, "Node26-30", [26, 30])
+    # creat_non_fitting_based_on_tree1(file, "Node26-30", [26, 30])
 
-    file.save('L11_data.xls')
+    # file.save('L11_data.xls')
 
 
 def creat_non_fitting_based_on_tree1(file, name, node_num):
     num = ["node", "best_worst_cost", "optimal_cost", "optimal_time", "repaired_cost", "repaired_time",
            "scope_repair_cost", "scope_repair_time", "grade1", "grade2"]
-    tree_num, mutated_num, log_num, non_fit_pro = 1, 2, 10, 0.8
+    tree_num, mutated_num, log_num, non_fit_pro = 5, 1, 5, 0.8
     row_index = 0
     table = file.add_sheet(name)
     tree = [randomly_create_new_tree(random.randint(node_num[0], node_num[1])) for _ in range(tree_num)]
@@ -115,7 +115,7 @@ def alignment_quality_log_based_on_tree2():
 def creat_non_fitting_based_on_tree2(file, name, node_num):
     num = ["node", "best_worst_cost", "optimal_cost", "optimal_time", "repaired_cost", "repaired_time",
            "scope_repair_cost", "scope_repair_time", "grade1", "grade2"]
-    tree_num, mutated_num, log_num, non_fit_pro = 2, 4, 1, 0.8
+    tree_num, mutated_num, log_num, non_fit_pro = 5, 1, 5, 0.8
     row_index = 0
     table = file.add_sheet(name)
     tree = [randomly_create_new_tree(random.randint(node_num[0], node_num[1])) for _ in range(tree_num)]
@@ -162,4 +162,5 @@ def print_intermediate_result(tree, m_tree, log, alignments, optimal_alignments,
 
 
 if __name__ == "__main__":
+    alignment_quality_log_based_on_tree1()
     alignment_quality_log_based_on_tree2()
