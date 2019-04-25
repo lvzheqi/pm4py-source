@@ -1,17 +1,14 @@
 import time
 import random
-# import copy
 
 from pm4py.algo.conformance import alignments as ali
-from pm4py.objects.process_tree import util as pt_util
+from pm4py.objects.process_tree import util as pt_utils
 
-from align_repair.stochastic_generation.stochastic_pt_generation import randomly_create_new_tree
-from align_repair.stochastic_generation.non_fitting_eventlog_generation import create_non_fitting_eventlog
-from align_repair.stochastic_generation.stochastic_mutated_pt import randomly_create_mutated_tree
-from align_repair.pt_manipulate import pt_number, utils as pt_man_util
-from align_repair.repair.align_repair import alignment_repair_with_operator_align
-from align_repair.repair.scope_expand import scope_expand
-from align_repair.repair.general_scope_expand import general_scope_expand
+from align_repair.process_tree.stochastic_generation import stochastic_pt_mutate as pt_mutate
+from align_repair.process_tree.stochastic_generation import non_fitting_log_create as log_create
+from align_repair.process_tree.stochastic_generation import stochastic_pt_create as pt_create
+from align_repair.process_tree.manipulation import pt_number, utils as pt_mani_utils
+from align_repair.repair import scope_expand, general_scope_expand, align_repair
 from align_repair.evaluation import create_event_log, print_short_alignment, \
     alignment_on_lock_pt, get_best_cost_on_pt, print_event_log
 
@@ -20,8 +17,8 @@ from xlwt import Workbook
 
 def compute_cost_and_time(tree, m_tree, log):
 
-    pt_number.pt_number(tree, 'D', 1)
-    pt_number.pt_number(m_tree, 'D', 1)
+    pt_number.apply(tree, 'D', 1)
+    pt_number.apply(m_tree, 'D', 1)
 
     alignments = alignment_on_lock_pt(tree, log)
 
@@ -34,21 +31,21 @@ def compute_cost_and_time(tree, m_tree, log):
     best_worst_cost = sum([get_best_cost_on_pt(tree) + len(trace) * ali.utils.STD_MODEL_LOG_MOVE_COST for trace in log])
 
     start = time.time()
-    repair_alignments = alignment_repair_with_operator_align(tree, m_tree, log, alignments)
+    repair_alignments = align_repair.apply(tree, m_tree, log, alignments)
     end = time.time()
     repaired_time = end - start
     repaired_cost = sum([align['cost'] for align in repair_alignments])
 
     start = time.time()
-    scope_aligns = scope_expand(alignments, tree, m_tree)
-    scope_repaired_alignments = alignment_repair_with_operator_align(tree, m_tree, log, scope_aligns)
+    s_aligns = scope_expand.apply(alignments, tree, m_tree)
+    scope_repaired_alignments = align_repair.apply(tree, m_tree, log, s_aligns)
     end = time.time()
     scope_repaired_time = end - start
     scope_repaired_cost = sum([align['cost'] for align in scope_repaired_alignments])
 
     start = time.time()
-    scope_aligns = general_scope_expand(alignments, tree, m_tree)
-    g_scope_repaired_alignments = alignment_repair_with_operator_align(tree, m_tree, log, scope_aligns)
+    s_aligns = general_scope_expand.apply(alignments, tree, m_tree)
+    g_scope_repaired_alignments = align_repair.apply(tree, m_tree, log, s_aligns)
     end = time.time()
     g_scope_repaired_time = end - start
     g_scope_repaired_cost = sum([align['cost'] for align in g_scope_repaired_alignments])
@@ -85,11 +82,11 @@ def creat_non_fitting_based_on_tree1(file, name, node_num):
     tree_num, mutated_num, log_num, non_fit_pro = 5, 1, 5, 0.8
     row_index = 0
     table = file.add_sheet(name)
-    tree = [randomly_create_new_tree(random.randint(node_num[0], node_num[1])) for _ in range(tree_num)]
-    m_tree = [[randomly_create_mutated_tree(tree) for _ in range(mutated_num)] for tree in tree]
-    log = [create_non_fitting_eventlog(tree, log_num, non_fit_pro) for tree in tree]
+    tree = [pt_create.apply(random.randint(node_num[0], node_num[1])) for _ in range(tree_num)]
+    m_tree = [[pt_mutate.apply(tree) for _ in range(mutated_num)] for tree in tree]
+    log = [log_create.apply(tree, log_num, non_fit_pro) for tree in tree]
     for i in range(len(tree)):
-        node_num = pt_man_util.get_non_none_leaves_number(tree[i])
+        node_num = pt_mani_utils.non_none_leaves_number(tree[i])
         for j in range(len(m_tree[0])):
             result = compute_cost_and_time(tree[i], m_tree[i][j], log[i])
             print_tree_align_compare(result)
@@ -118,11 +115,11 @@ def creat_non_fitting_based_on_tree2(file, name, node_num):
     tree_num, mutated_num, log_num, non_fit_pro = 5, 1, 5, 0.8
     row_index = 0
     table = file.add_sheet(name)
-    tree = [randomly_create_new_tree(random.randint(node_num[0], node_num[1])) for _ in range(tree_num)]
-    m_tree = [[randomly_create_mutated_tree(tree) for _ in range(mutated_num)] for tree in tree]
-    log = [[create_non_fitting_eventlog(m_tree, log_num, non_fit_pro) for m_tree in m_tr4] for m_tr4 in m_tree]
+    tree = [pt_create.apply(random.randint(node_num[0], node_num[1])) for _ in range(tree_num)]
+    m_tree = [[pt_mutate.apply(tree) for _ in range(mutated_num)] for tree in tree]
+    log = [[log_create.apply(m_tree, log_num, non_fit_pro) for m_tree in m_tr4] for m_tr4 in m_tree]
     for i in range(len(tree)):
-        node_num = pt_man_util.get_non_none_leaves_number(tree[i])
+        node_num = pt_mani_utils.non_none_leaves_number(tree[i])
         for j in range(len(m_tree[0])):
             result = compute_cost_and_time(tree[i], m_tree[i][j], log[i][j])
             print_tree_align_compare(result)
@@ -133,8 +130,8 @@ def creat_non_fitting_based_on_tree2(file, name, node_num):
 
 
 def test_compute_cost_time():
-    tree1 = pt_util.parse("*( a, X( f, g, +( c, X( d, e ) ), b ), τ )")
-    tree2 = pt_util.parse("*( a, X( f, g, k, +( c, X( d, e ) ), b ), τ )")
+    tree1 = pt_utils.parse("*( a, X( f, g, +( c, X( d, e ) ), b ), τ )")
+    tree2 = pt_utils.parse("*( a, X( f, g, k, +( c, X( d, e ) ), b ), τ )")
     log = create_event_log("ak")
 
     result = compute_cost_and_time(tree1, tree2, log)

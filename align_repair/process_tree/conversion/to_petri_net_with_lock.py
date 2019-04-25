@@ -8,7 +8,7 @@ from pm4py.algo.discovery.inductive.versions.dfg.util.petri_el_add import get_ne
 from pm4py.objects.petri.petrinet import PetriNet
 from pm4py.objects.process_tree.pt_operator import Operator
 
-from align_repair.pt_manipulate.utils import LOCK_START, LOCK_END
+from align_repair.process_tree.alignments.utils import LOCK_START, LOCK_END
 
 SOURCE_NAME = "source"
 SINK_NAME = "SINK"
@@ -96,7 +96,8 @@ def recursively_add_tree(tree, net, initial_entity_subtree, final_entity_subtree
             petri.utils.add_arc_from_to(new_final_trans, intermediate_place_e, net)
 
             for subtree in tree_childs:
-                recursively_add_tree(subtree, net, new_initial_trans, new_final_trans, counts, index + 1, node_end, param_child_lock)
+                recursively_add_tree(subtree, net, new_initial_trans, new_final_trans, counts, index + 1,
+                                     node_end, param_child_lock)
                 index = node_end[index + 1]
 
         elif tree.operator == Operator.SEQUENCE:
@@ -172,7 +173,7 @@ def generate_pn(tree, net, initial_entity_subtree, final_entity_subtree, counts,
                          param_child_lock)
 
 
-def apply_with_operator(tree, parameters=None):
+def apply(tree, parameters=None):
     """
     Conversion Process Tree to PetriNet.
 

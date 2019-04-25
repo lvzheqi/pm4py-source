@@ -1,14 +1,15 @@
-import random, copy
+import random
+import copy
 
 from pm4py.objects.process_tree.process_tree import ProcessTree
 from pm4py.objects.process_tree.pt_operator import Operator
 
-from align_repair.pt_manipulate.pt_normalize import parse_to_general_tree
-from align_repair.pt_manipulate import utils as pt_mani_utils
-from align_repair.stochastic_generation.stochastic_pt_generation import get_cur_label
+from align_repair.process_tree.manipulation import pt_normalize
+from align_repair.process_tree.manipulation import utils as pt_mani_utils
+from align_repair.process_tree.stochastic_generation import utils as pt_gene_utils
 
 
-def randomly_choose_node(tree):
+def randomly_choose_node(tree, level):
     """
     Randomly choose an inner node
 
@@ -16,20 +17,22 @@ def randomly_choose_node(tree):
     -----------
     tree
         Original Process Tree
-
+    level
+        The maximal depth of the chosen node
     Returns
     ------------
     node
         The inner node that be selected, except root
     """
+    level = pt_mani_utils.pt_depth(tree) if level is None else min(pt_mani_utils.pt_depth(tree), level)
     node_sequence = pt_mani_utils.parse_tree_to_a_bfs_sequence(tree)
-    index = random.randint(0, len(node_sequence) - 1)
-    while node_sequence[index].operator is None:
-        index = random.randint(0, len(node_sequence) - 1)
-    return node_sequence[index]
+    node = random.choice(node_sequence)
+    while node.operator is None or pt_mani_utils.pt_depth(node) > level:
+        node = random.choice(node_sequence)
+    return node
 
 
-def add_new_node(tree):
+def add_new_node(tree, level):
     """
     Randomly select an inner node, and add a new child, and ensure that it satisfies the tree rules.
 
@@ -37,11 +40,13 @@ def add_new_node(tree):
     -----------
     tree
         Original Process Tree
+    level
+        The maximal depth of the chosen node
     """
-    node = randomly_choose_node(tree)
+    node = randomly_choose_node(tree, level)
     tmp_node = copy.deepcopy(node)
     add_node = ProcessTree(None, node, None,
-                           get_cur_label(pt_mani_utils.get_non_none_leaves_number(tree) + 1))
+                           pt_gene_utils.get_cur_label(pt_mani_utils.non_none_leaves_number(tree) + 1))
     if node.operator == Operator.LOOP:
         child = node.children[1]
         new_child = ProcessTree(Operator.XOR, node, [child, add_node], None)
@@ -53,7 +58,7 @@ def add_new_node(tree):
     return tmp_node, node
 
 
-def remove_node(tree):
+def remove_node(tree, level):
     """
     Randomly select one node, and remove one of the child
 
@@ -61,19 +66,21 @@ def remove_node(tree):
     -----------
     tree
         Original Process Tree
+    level
+        The maximal depth of the chosen node
     """
 
-    node = randomly_choose_node(tree)
+    node = randomly_choose_node(tree, level)
     tmp_node = copy.deepcopy(node)
     if node.operator == Operator.LOOP:
         node.children[random.randint(0, 1)] = ProcessTree(None, node, None, None)
     else:
-        node.children.pop(random.randint(0, len(node.children) - 1))
-    parse_to_general_tree(tree)
+        node.children.remove(random.choice(node.children))
+    pt_normalize.apply(tree)
     return tmp_node, node
 
 
-def change_node_operator(tree):
+def change_node_operator(tree, level):
     """
     Randomly select an inner node, and replace the operator using others,
     and ensure that it satisfies the tree rules.
@@ -82,22 +89,24 @@ def change_node_operator(tree):
     -----------
     tree
         Original Process Tree
+    level
+        The maximal depth of the chosen node
     """
-    node = randomly_choose_node(tree)
+    node = randomly_choose_node(tree, level)
     tmp_node = copy.deepcopy(node)
     operators = [_ for _ in Operator]
-    index = random.randint(0, len(operators) - 1)
-    while operators[index] == node.operator:
-        index = random.randint(0, len(operators) - 1)
-    if operators[index] == Operator.LOOP:
+    op = random.choice(operators)
+    while op == node.operator:
+        op = random.choice(operators)
+    if op == Operator.LOOP:
         while len(node.children) > 2:
             node.children.pop()
         node.children.append(ProcessTree(None, node, None, None))
-    node.operator = operators[index]
+    node.operator = op
     return tmp_node, node
 
 
-def randomly_create_mutated_tree(tree):
+def apply(tree, level=None):
     """
     Slightly change the given tree, e.g. randomly adding a new node, randomly removing a node, Or
     Randomly change a node of the tree
@@ -106,6 +115,8 @@ def randomly_create_mutated_tree(tree):
     -----------
     tree
         Original Process Tree
+    level
+        The maximal depth of the chosen node
 
     Returns
     ------------
@@ -115,9 +126,9 @@ def randomly_create_mutated_tree(tree):
     mutated_tree = copy.deepcopy(tree)
     index = random.randint(0, 2)
     if index == 0:
-        add_new_node(mutated_tree)
+        add_new_node(mutated_tree, level)
     elif index == 1:
-        remove_node(mutated_tree)
+        remove_node(mutated_tree, level)
     elif index == 2:
-        change_node_operator(mutated_tree)
+        change_node_operator(mutated_tree, level)
     return mutated_tree

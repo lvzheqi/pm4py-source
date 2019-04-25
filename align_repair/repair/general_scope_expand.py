@@ -2,7 +2,8 @@ import copy
 
 from pm4py.objects.process_tree.pt_operator import Operator
 
-from align_repair.pt_manipulate import pt_compare, utils as pt_utils
+from align_repair.process_tree.manipulation import pt_compare, utils as pt_mani_utils
+from align_repair.process_tree.alignments import utils as pt_align_utils
 
 
 def search_scope_index(align, node):
@@ -10,6 +11,7 @@ def search_scope_index(align, node):
     Return the border index list of the node in alignment.
 
     Parameters
+    ------------
     ------------
     align
         alignment on the original process tree of one trace
@@ -23,7 +25,8 @@ def search_scope_index(align, node):
     """
     index = list()
     for i, move in enumerate(align):
-        index.append(i) if pt_utils.is_node_start(move, node, True) or pt_utils.is_node_end(move, node, True) else None
+        index.append(i) if pt_align_utils.is_node_start(move, node, True) or \
+                           pt_align_utils.is_node_end(move, node, True) else None
     return index
 
 
@@ -51,10 +54,10 @@ def find_next_left_border(align, index, node, start_or_end, bound):
     """
 
     if start_or_end == 1:
-        while not pt_utils.is_node_start(align[index], node, True):
+        while not pt_align_utils.is_node_start(align[index], node, True):
             index -= 1
     else:
-        while not pt_utils.is_node_end(align[index], node, True):
+        while not pt_align_utils.is_node_end(align[index], node, True):
             index -= 1
     return find_left_border(node, align, index, bound)
 
@@ -92,24 +95,24 @@ def find_left_border(node, align, cur_pos, bound):
         move_move(align, cur_pos, 0)
         return 0
 
-    if pt_utils.is_node_end(align[index], node, True):
-        while not pt_utils.is_node_start(align[index], node, True):
+    if pt_align_utils.is_node_end(align[index], node, True):
+        while not pt_align_utils.is_node_start(align[index], node, True):
             index -= 1
 
         index_s = find_left_border(node, align, index, bound) if index > bound else bound
 
         index = cur_pos
-        children = pt_utils.get_lock_tree_labels(node)
+        children = pt_mani_utils.lock_tree_labels(node)
         while index != index_s:
-            if not pt_utils.check_model_label_belong_to_subtree(align[index], children, True):
+            if not pt_align_utils.check_model_label_belong_to_subtree(align[index], children, True):
                 move_move(align, index, cur_pos)
                 cur_pos -= 1
-            elif pt_utils.is_sync_move(align[index], True):
+            elif pt_align_utils.is_sync_move(align[index], True):
                 break
             index -= 1
         return cur_pos
 
-    elif pt_utils.is_node_start(align[index], node, True):
+    elif pt_align_utils.is_node_start(align[index], node, True):
         # parent is not NONE, otherwise index = 0
         if node.parent.operator == Operator.PARALLEL or node.parent.operator == Operator.XOR:
             index = find_next_left_border(align, index, node.parent, 1, bound)
@@ -128,10 +131,10 @@ def find_left_border(node, align, cur_pos, bound):
         elif node.parent.operator == Operator.LOOP:
 
             if node.parent.children[0].index == node.index:    # first child
-                while not pt_utils.is_node_end(align[index], node.parent.children[1], True) and \
-                        not pt_utils.is_node_start(align[index], node.parent, True):
+                while not pt_align_utils.is_node_end(align[index], node.parent.children[1], True) and \
+                        not pt_align_utils.is_node_start(align[index], node.parent, True):
                     index -= 1
-                if pt_utils.is_node_end(align[index], node.parent.children[1], True):
+                if pt_align_utils.is_node_end(align[index], node.parent.children[1], True):
                     index = find_left_border(node.parent.children[1], align, index, bound)
                 else:
                     index = find_left_border(node.parent, align, index, bound)
@@ -145,10 +148,10 @@ def find_left_border(node, align, cur_pos, bound):
 
 def find_next_right_border(align, index, node, start_or_end, border):
     if start_or_end == 1:
-        while not pt_utils.is_node_start(align[index], node, True):
+        while not pt_align_utils.is_node_start(align[index], node, True):
             index += 1
     else:
-        while not pt_utils.is_node_end(align[index], node, True):
+        while not pt_align_utils.is_node_end(align[index], node, True):
             index += 1
     return find_right_border(node, align, index, border)
 
@@ -164,24 +167,24 @@ def find_right_border(node, align, cur_pos, bound):
         move_move(align, cur_pos, len(align) - 1)
         return len(align) - 1
 
-    if pt_utils.is_node_start(align[index], node, True):
-        while not pt_utils.is_node_end(align[index], node, True):
+    if pt_align_utils.is_node_start(align[index], node, True):
+        while not pt_align_utils.is_node_end(align[index], node, True):
             index += 1
 
         index_s = find_right_border(node, align, index, bound) if index < bound else bound
 
         flag, index = 0, cur_pos
-        children = pt_utils.get_lock_tree_labels(node)
+        children = pt_mani_utils.lock_tree_labels(node)
         while index != index_s:
-            if not pt_utils.check_model_label_belong_to_subtree(align[index], children, True):
+            if not pt_align_utils.check_model_label_belong_to_subtree(align[index], children, True):
                 move_move(align, index, cur_pos)
                 cur_pos += 1
-            elif pt_utils.is_sync_move(align[index], True):
+            elif pt_align_utils.is_sync_move(align[index], True):
                 break
             index += 1
         return cur_pos
 
-    elif pt_utils.is_node_end(align[index], node, True):
+    elif pt_align_utils.is_node_end(align[index], node, True):
         # parent is not NONE, otherwise index = 0
 
         if node.parent.operator == Operator.PARALLEL or node.parent.operator == Operator.XOR:
@@ -200,10 +203,10 @@ def find_right_border(node, align, cur_pos, bound):
 
         elif node.parent.operator == Operator.LOOP:
             if node.parent.children[0].index == node.index:  # first child
-                while not pt_utils.is_node_start(align[index], node.parent.children[1], True) and \
-                        not pt_utils.is_node_start(align[index], node.parent.children[2], True):
+                while not pt_align_utils.is_node_start(align[index], node.parent.children[1], True) and \
+                        not pt_align_utils.is_node_start(align[index], node.parent.children[2], True):
                     index += 1
-                if pt_utils.is_node_start(align[index], node.parent.children[1], True):
+                if pt_align_utils.is_node_start(align[index], node.parent.children[1], True):
                     index = find_right_border(node.parent.children[1], align, index, bound)
                 else:
                     index = find_right_border(node.parent.children[2], align, index, bound)
@@ -242,9 +245,9 @@ def scope_expand_trace(align, subtree):
     return align
 
 
-def general_scope_expand(alignments, tree, m_tree):
+def apply(alignments, tree, m_tree):
     alignments = copy.deepcopy(alignments)
-    com_res = pt_compare.pt_compare(tree, m_tree)
+    com_res = pt_compare.apply(tree, m_tree)
     if not com_res.value:
         for align in alignments:
             if align.get("expand") is None:

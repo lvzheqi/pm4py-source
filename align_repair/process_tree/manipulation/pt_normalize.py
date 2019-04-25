@@ -1,5 +1,6 @@
 from pm4py.objects.process_tree.pt_operator import Operator
-from align_repair.pt_manipulate.pt_compare import pt_compare
+
+from align_repair.process_tree.manipulation import pt_compare
 
 
 def merge_child_to_node(node):
@@ -64,7 +65,7 @@ def remove_repeat_child(node):
         children = list()
         for i in range(len(node.children) - 1, -1, -1):
             for child in children:
-                com_res = pt_compare(node.children[i], child)
+                com_res = pt_compare.apply(node.children[i], child)
                 if not com_res.value:
                     children.append(node.children[i])
                 else:
@@ -107,7 +108,7 @@ def recursively_to_general_tree(tree):
     normalize_node(tree)
 
 
-def parse_to_general_tree(tree):
+def apply(tree):
     """
     Conversion the given process tree to a general process tree, e.g.->(a,->(b,c)) = ->(a,b,c),
     remove repeatable child
@@ -119,4 +120,3 @@ def parse_to_general_tree(tree):
     """
     # TODO: consider loop with more than 3 or less than 3
     recursively_to_general_tree(tree)
-

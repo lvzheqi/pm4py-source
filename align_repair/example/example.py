@@ -20,7 +20,7 @@ def example_create_random_tree():
     """
     print_spilt_start("create-random-tree")
     node_number = 10
-    tree = align_repair.stochastic_generation.stochastic_pt_generation.randomly_create_new_tree(node_number)
+    tree = align_repair.process_tree.stochastic_generation.stochastic_pt_create.apply(node_number)
     print("Randomly Tree with 10 Nodes (including leaves): \n\t", tree)
     print_spilt_end()
 
@@ -35,8 +35,8 @@ def example_create_mutated_tree():
         Mutated Process Tree
     """
     print_spilt_start("create-mutated-tree")
-    tree1 = align_repair.stochastic_generation.stochastic_pt_generation.randomly_create_new_tree(20)
-    tree2 = align_repair.stochastic_generation.stochastic_mutated_pt.randomly_create_mutated_tree(tree1)
+    tree1 = align_repair.process_tree.stochastic_generation.stochastic_pt_create.apply(20)
+    tree2 = align_repair.process_tree.stochastic_generation.stochastic_pt_mutate.apply(tree1)
     print("Original Tree:", tree1)
     print("Mutated Tree:", tree2)
     print_spilt_end()
@@ -55,9 +55,9 @@ def example_create_non_fitting_event_log():
     """
     print_spilt_start("create-non-fitting-event-log")
     trace_number, probability_non_fitting = 10, 0.8
-    tree = align_repair.stochastic_generation.stochastic_pt_generation.randomly_create_new_tree(10)
-    log = align_repair.stochastic_generation.non_fitting_eventlog_generation.\
-        create_non_fitting_eventlog(tree, trace_number, probability_non_fitting)
+    tree = align_repair.process_tree.stochastic_generation.stochastic_pt_create.apply(10)
+    log = align_repair.process_tree.stochastic_generation.non_fitting_log_create.\
+        apply(tree, trace_number, probability_non_fitting)
     print("Event Log:", end=" ")
     print_event_log(log)
     print_spilt_end()
@@ -75,11 +75,11 @@ def example_compare_process_tree():
     print_spilt_start("compare-process-tree")
     tree1 = pm4py.objects.process_tree.pt_util.parse("X (a, ->( b, c))")
     tree2 = pm4py.objects.process_tree.pt_util.parse("X (a, *( b, c, τ))")
-    result = align_repair.pt_manipulate.pt_compare.pt_compare(tree1, tree2)
+    result = align_repair.process_tree.manipulation.pt_compare.apply(tree1, tree2)
     print(str(result))
     tree1 = pm4py.objects.process_tree.pt_util.parse("X (a, ->( b, c))")
     tree2 = pm4py.objects.process_tree.pt_util.parse("X (a, ->( b, c))")
-    result = align_repair.pt_manipulate.pt_compare.pt_compare(tree1, tree2)
+    result = align_repair.process_tree.manipulation.pt_compare.apply(tree1, tree2)
     print(str(result))
     print_spilt_end()
 
@@ -96,10 +96,10 @@ def example_number_process_tree():
         Process Tree with labels
     """
     print_spilt_start("number-process-tree")
-    tree = align_repair.stochastic_generation.stochastic_pt_generation.randomly_create_new_tree(20)
-    total_number = align_repair.pt_manipulate.pt_number.pt_number(tree, 'D', 1)
+    tree = align_repair.process_tree.stochastic_generation.stochastic_pt_create.apply(20)
+    total_number = align_repair.process_tree.manipulation.pt_number.apply(tree, 'D', 1)
     print("DFS search: There are totally", total_number, "nodes")
-    total_number = align_repair.pt_manipulate.pt_number.pt_number(tree, 'B', 1)
+    total_number = align_repair.process_tree.manipulation.pt_number.apply(tree, 'B', 1)
     print("BFS search: There are totally", total_number, "nodes")
     print_spilt_end()
 
@@ -115,15 +115,15 @@ def example_pt2pn_with_lock():
         net, initial_marking, final_marking
     """
     print_spilt_start("pt2pn-with-lock")
-    tree = align_repair.stochastic_generation.stochastic_pt_generation.randomly_create_new_tree(20)
-    net, initial_marking, final_marking = align_repair.pt_align.to_petri_net_with_operator.apply_with_operator(tree)
+    tree = align_repair.process_tree.stochastic_generation.stochastic_pt_create.apply(20)
+    net, initial_marking, final_marking = align_repair.process_tree.conversion.to_petri_net_with_lock.apply(tree)
     gviz = pm4py.visualization.petrinet.factory.apply(net)
     pm4py.visualization.petrinet.factory.view(gviz)
     print("SHOW IN GRAPH")
     print_spilt_end()
 
 
-def example_get_with_lock_parameters():
+def example_lock_alignment_parameters():
     """
     Get corresponding parameters for alignment
 
@@ -134,8 +134,8 @@ def example_get_with_lock_parameters():
     """
     print_spilt_start("parameters-with-lock")
     tree = pm4py.objects.process_tree.pt_util.parse("X (a, b)")
-    net, _, _ = align_repair.pt_align.to_petri_net_with_operator.apply_with_operator(tree)
-    parameters = align_repair.pt_align.utils.get_parameters(net)
+    net, _, _ = align_repair.process_tree.conversion.to_petri_net_with_lock.apply(tree)
+    parameters = align_repair.process_tree.alignments.utils.alignment_parameters(net)
     print("Parameters:", parameters)
     print_spilt_end()
 
@@ -154,13 +154,13 @@ def example_repair_alignment():
     print_spilt_start("alignment-repair")
     tree1 = pm4py.objects.process_tree.pt_util.parse("+( a, X( g, h ) ) ")
     tree2 = pm4py.objects.process_tree.pt_util.parse("+( a, ->( g, h ) )")
-    align_repair.pt_manipulate.pt_number.pt_number(tree1, 'D', 1)
-    align_repair.pt_manipulate.pt_number.pt_number(tree2, 'D', 1)
+    align_repair.process_tree.manipulation.pt_number.apply(tree1, 'D', 1)
+    align_repair.process_tree.manipulation.pt_number.apply(tree2, 'D', 1)
     log = create_event_log("agh")
     alignment_on_tree1 = alignment_on_lock_pt(tree1, log)
 
     repaired_alignment = align_repair.repair.align_repair.\
-        alignment_repair_with_operator_align(tree1, tree2, log, alignment_on_tree1)
+        apply(tree1, tree2, log, alignment_on_tree1)
 
     print("Tree1:", tree1)
     print("Tree2:", tree2)
@@ -183,12 +183,12 @@ def example_scope_expand():
        Scope Expanding Alignment of Alignment on Tree1
     """
     print_spilt_start("scope-expand")
-    tree1 = align_repair.stochastic_generation.stochastic_pt_generation.randomly_create_new_tree(15)
-    tree2 = align_repair.stochastic_generation.stochastic_mutated_pt.randomly_create_mutated_tree(tree1)
-    log = align_repair.stochastic_generation.non_fitting_eventlog_generation.create_non_fitting_eventlog(tree2, 1, 0.8)
-    align_repair.pt_manipulate.pt_number.pt_number(tree1, 'D', 1)
+    tree1 = align_repair.process_tree.stochastic_generation.stochastic_pt_create.apply(15)
+    tree2 = align_repair.process_tree.stochastic_generation.stochastic_pt_mutate.apply(tree1)
+    log = align_repair.process_tree.stochastic_generation.non_fitting_log_create.apply(tree2, 1, 0.8)
+    align_repair.process_tree.manipulation.pt_number.apply(tree1, 'D', 1)
     alignment_on_tree1 = alignment_on_lock_pt(tree1, log)
-    expand_alignment = align_repair.repair.scope_expand.scope_expand(alignment_on_tree1, tree1, tree2)
+    expand_alignment = align_repair.repair.scope_expand.apply(alignment_on_tree1, tree1, tree2)
 
     print("Tree1:", tree1)
     print("Tree2:", tree2)
@@ -211,17 +211,17 @@ def example_general():
        Scope Expanding Alignment of Alignment on Tree1
     """
     print_spilt_start("general-scope-expand")
-    tree1 = align_repair.stochastic_generation.stochastic_pt_generation.randomly_create_new_tree(15)
-    tree2 = align_repair.stochastic_generation.stochastic_mutated_pt.randomly_create_mutated_tree(tree1)
-    log = align_repair.stochastic_generation.non_fitting_eventlog_generation.create_non_fitting_eventlog(tree2, 1, 0.8)
-    align_repair.pt_manipulate.pt_number.pt_number(tree1, 'D', 1)
+    tree1 = align_repair.process_tree.stochastic_generation.stochastic_pt_create.apply(15)
+    tree2 = align_repair.process_tree.stochastic_generation.stochastic_pt_mutate.apply(tree1)
+    log = align_repair.process_tree.stochastic_generation.non_fitting_log_create.apply(tree2, 1, 0.8)
+    align_repair.process_tree.manipulation.pt_number.apply(tree1, 'D', 1)
     alignment_on_tree1 = alignment_on_lock_pt(tree1, log)
-    optimal_alignment_on_tree2 = align_repair.repair.scope_expand.scope_expand(alignment_on_tree1, tree1, tree2)
+    optimal_alignment_on_tree2 = align_repair.repair.scope_expand.apply(alignment_on_tree1, tree1, tree2)
     direct_repaired_alignment = align_repair.repair.align_repair. \
-        alignment_repair_with_operator_align(tree1, tree2, log, alignment_on_tree1)
-    expand_alignment = align_repair.repair.scope_expand.scope_expand(alignment_on_tree1, tree1, tree2)
+        apply(tree1, tree2, log, alignment_on_tree1)
+    expand_alignment = align_repair.repair.scope_expand.apply(alignment_on_tree1, tree1, tree2)
     scoped_repaired_alignment = align_repair.repair.align_repair. \
-        alignment_repair_with_operator_align(tree1, tree2, log, expand_alignment)
+        apply(tree1, tree2, log, expand_alignment)
 
     print("Tree1:", tree1)
     print("Tree2:", tree2)
@@ -250,7 +250,7 @@ if __name__ == "__main__":
     example_compare_process_tree()
     example_number_process_tree()
     example_pt2pn_with_lock()
-    example_get_with_lock_parameters()
+    example_lock_alignment_parameters()
     example_repair_alignment()
     example_scope_expand()
     example_general()

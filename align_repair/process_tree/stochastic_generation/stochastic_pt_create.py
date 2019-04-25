@@ -2,25 +2,9 @@ import random
 
 from pm4py.objects.process_tree.process_tree import ProcessTree
 from pm4py.objects.process_tree.pt_operator import Operator
-from align_repair.pt_manipulate.pt_normalize import parse_to_general_tree
 
-
-def get_cur_label(no_number):
-    """
-    Return a unique label for the current node
-
-    Parameters
-    -----------
-    no_number
-        The number of the node, each leaf-node has a unique number
-
-    Returns
-    ------------
-    Label
-        Unique label of current node
-    """
-    # return 'label_' + str(no_number)
-    return chr(no_number + 96)
+from align_repair.process_tree.manipulation import pt_normalize
+from align_repair.process_tree.stochastic_generation import utils as pt_gene_utils
 
 
 def add_label_to_leaf(children):
@@ -33,7 +17,7 @@ def add_label_to_leaf(children):
         list of Process tree that has no child
     """
     for i, child in enumerate(children):
-        child.label = get_cur_label(i + 1)
+        child.label = pt_gene_utils.get_cur_label(i + 1)
 
 
 def create_pt_of_three_node(root, op):
@@ -68,8 +52,9 @@ def create_new_binary_process_tree(no_number):
         return None
     operators, enable, cur_num = [_ for _ in Operator], [root], 1
     while cur_num + 3 <= no_number:
-        node = enable.pop(random.randint(0, len(enable)-1))
-        children = create_pt_of_three_node(node, operators[random.randint(0, 3)])
+        node = random.choice(enable)
+        enable.remove(node)
+        children = create_pt_of_three_node(node, random.choice(operators))
         enable += children
         if node.parent is not None and node.operator == node.parent.operator and node.operator != Operator.LOOP:
             cur_num += 1
@@ -91,11 +76,12 @@ def create_new_binary_process_tree(no_number):
             flag = False if root is None else True
             print('could not create a tree, try again!!! Maybe infinite!!!')
     elif no_number - cur_num == 2:  # must differ with parent and not equal LOOP
-        node = enable.pop(random.randint(0, len(enable) - 1))
-        op = operators[random.randint(0, 3)]
+        node = random.choice(enable)
+        enable.remove(node)
+        op = random.choice(operators)
         while op == Operator.LOOP or (node.parent is not None and op == node.parent.operator)\
                 or node.parent is None:
-            op = operators[random.randint(0, 3)]
+            op = random.choice(operators)
         children = create_pt_of_three_node(node, op)
         enable += children
 
@@ -103,7 +89,7 @@ def create_new_binary_process_tree(no_number):
     return root
 
 
-def randomly_create_new_tree(no_number):
+def apply(no_number):
     """
     Random create a new tree with fixed node number
 
@@ -118,5 +104,5 @@ def randomly_create_new_tree(no_number):
         Process Tree
     """
     tree = create_new_binary_process_tree(no_number)
-    parse_to_general_tree(tree) if tree is not None else None
+    pt_normalize.apply(tree) if tree is not None else None
     return tree

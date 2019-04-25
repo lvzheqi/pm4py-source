@@ -27,7 +27,7 @@ class CompareResult(object):
     subtree2 = property(_get_subtree2)
 
 
-def pt_compare(tree1, tree2):
+def apply(tree1, tree2):
     """
     Compare process trees and return two smallest subtree that cause different in the original trees,
     otherwise return True, None, None.
@@ -58,7 +58,7 @@ def pt_compare(tree1, tree2):
         if tree1.operator == Operator.SEQUENCE or tree1.operator == Operator.LOOP:
             flag, subtree1, subtree2 = 0, None, None
             for i in range(len(tree1.children)):
-                com_res = pt_compare(tree1.children[i], tree2.children[i])
+                com_res = apply(tree1.children[i], tree2.children[i])
                 if not com_res.value and flag == 0:
                     subtree1, subtree2 = com_res.subtree1, com_res.subtree2
                     flag += 1
@@ -76,7 +76,7 @@ def pt_compare(tree1, tree2):
             children2 = [child for child in tree2.children]
             for i in range(len(children1)-1, -1, -1):
                 for j in range(len(children2)-1, -1, -1):
-                    com_res = pt_compare(children1[i], children2[j])
+                    com_res = apply(children1[i], children2[j])
                     if com_res.value:
                         children1.pop(i)
                         children2.pop(j)
@@ -84,5 +84,5 @@ def pt_compare(tree1, tree2):
             if len(children2) > 1:
                 return CompareResult(False, tree1, tree2)
             elif len(children2) == 1:
-                return pt_compare(children1.pop(), children2.pop())
+                return apply(children1.pop(), children2.pop())
     return CompareResult(True, None, None)

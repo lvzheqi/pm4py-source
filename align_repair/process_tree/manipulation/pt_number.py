@@ -4,7 +4,7 @@ This module provides method for number the nodes of the process tree.
 from pm4py.objects.process_tree.process_tree import ProcessTree
 
 
-def pt_number(tree, search='D', index=1):
+def apply(tree, search='D', index=1):
     """
     Number the nodes of given process tree with specified type
 
@@ -22,10 +22,10 @@ def pt_number(tree, search='D', index=1):
     --------------
         Return the total number of nodes
     """
-    return _dfs_number(tree, index) if search == 'D' else _bfs_number(tree, index)
+    return __dfs_number(tree, index) if search == 'D' else __bfs_number(tree, index)
 
 
-def _dfs_number(tree, index):
+def __dfs_number(tree, index):
     """
     Number the nodes of tree according to DFS
 
@@ -43,11 +43,11 @@ def _dfs_number(tree, index):
     """
     tree.index = index
     for i in range(len(tree.children)):
-        index = _dfs_number(tree.children[i], index + 1)
+        index = __dfs_number(tree.children[i], index + 1)
     return index
 
 
-def _bfs_number(tree: ProcessTree, index):
+def __bfs_number(tree: ProcessTree, index):
     """
     Number the nodes of tree according to BFS
 
@@ -72,4 +72,3 @@ def _bfs_number(tree: ProcessTree, index):
         for i in range(len(node.children)):
             q.append(node.children[i])
     return index - 1
-

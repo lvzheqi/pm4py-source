@@ -6,8 +6,8 @@ from pm4py.objects.conversion.process_tree import factory as pt_to_net
 from pm4py.algo.conformance.alignments import factory as align_factory
 from pm4py.algo.conformance import alignments as ali
 
-from align_repair.pt_align import to_petri_net_with_operator as pt_to_net_with_op, utils as pt_align_utils
-from align_repair.pt_manipulate.utils import LOCK_END, LOCK_START
+from align_repair.process_tree.conversion import to_petri_net_with_lock as pt_to_lock_net
+from align_repair.process_tree.alignments import utils as pt_align_utils
 
 
 def create_event_log(log):
@@ -30,9 +30,10 @@ def print_event_log(log):
     print()
 
 
-def is_slient_move(align):
+def is_silent_move(align):
     align = align[1]
-    if align[0] == ali.utils.SKIP and (align[1] is None or align[1].endswith(LOCK_START) or align[1].endswith(LOCK_END)):
+    if align[0] == ali.utils.SKIP and (align[1] is None or align[1].endswith(pt_align_utils.LOCK_START)
+                                       or align[1].endswith(pt_align_utils.LOCK_START)):
         return False
     return True
 
@@ -40,7 +41,7 @@ def is_slient_move(align):
 def print_short_alignment(alignments, title="Align: "):
     for align in alignments:
         if align.get("print") is None:
-            new_align = list(filter(is_slient_move, align['alignment']))
+            new_align = list(filter(is_silent_move, align['alignment']))
             align["alignment"] = list(map(lambda a: a[1], new_align))
             align["print"] = True
     for align in alignments:
@@ -50,14 +51,14 @@ def print_short_alignment(alignments, title="Align: "):
 
 
 def alignment_on_pt(tree, log):
-    net, initial_marking, final_marking = pt_to_net_with_op.apply_with_operator(tree)
+    net, initial_marking, final_marking = pt_to_lock_net.apply(tree)
     alignments = align_factory.apply_log(log, net, initial_marking, final_marking)
     return alignments
 
 
 def alignment_on_lock_pt(tree, log):
-    net, initial_marking, final_marking = pt_to_net_with_op.apply_with_operator(tree)
-    parameters = pt_align_utils.get_parameters(net)
+    net, initial_marking, final_marking = pt_to_lock_net.apply(tree)
+    parameters = pt_align_utils.alignment_parameters(net)
     parameters['ret_tuple_as_trans_desc'] = True
     alignments = align_factory.apply_log(log, net, initial_marking, final_marking, parameters)
     return alignments
@@ -74,7 +75,7 @@ def draw_normal_pn4pt(tree, parameters=None):
 
 
 def draw_lock_pn4pt(tree, parameters=None):
-    net, initial_marking, final_marking = pt_to_net_with_op.apply_with_operator(tree, parameters)
+    net, initial_marking, final_marking = pt_to_lock_net.apply(tree, parameters)
     gviz = pn_vis_factory.apply(net)
     pn_vis_factory.view(gviz)
 

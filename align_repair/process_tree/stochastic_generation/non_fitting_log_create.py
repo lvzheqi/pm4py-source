@@ -4,11 +4,11 @@ from pm4py.objects.process_tree.semantics import generate_log
 from pm4py.objects.log.log import Trace, EventLog, Event
 from pm4py.objects.log.util import xes
 
-from align_repair.stochastic_generation.stochastic_pt_generation import get_cur_label
-from align_repair.pt_manipulate import utils as pt_utils
+from align_repair.process_tree.stochastic_generation import utils as pt_gene_utils
+from align_repair.process_tree.manipulation import utils as pt_mani_utils
 
 
-def create_non_fitting_eventlog(tree, no, prob):
+def apply(tree, no, prob):
     """
     Returns non-fitting EventLog with fixed traces randomly created by the process tree.
 
@@ -24,10 +24,10 @@ def create_non_fitting_eventlog(tree, no, prob):
     Returns
     ------------
     EventLog
-        Non-fitting Eventlog
+        Non-fitting event log
     """
     log, non_fit_traces = generate_log(tree, no), list()
-    label_num = pt_utils.get_non_none_leaves_number(tree)
+    label_num = pt_mani_utils.non_none_leaves_number(tree)
     for trace in log:
         non_fit_t = Trace(attributes=log.attributes)
         for event in trace:
@@ -36,11 +36,11 @@ def create_non_fitting_eventlog(tree, no, prob):
                 if index == 1:  # add a new event
                     non_fit_t.append(event)
                     new_event = Event()
-                    new_event[xes.DEFAULT_NAME_KEY] = get_cur_label(label_num + 1)
+                    new_event[xes.DEFAULT_NAME_KEY] = pt_gene_utils.get_cur_label(label_num + 1)
                     non_fit_t.append(new_event)
                 elif index == 2:    # replace with other event
                     new_event = Event()
-                    new_event[xes.DEFAULT_NAME_KEY] = get_cur_label(random.randint(1, label_num))
+                    new_event[xes.DEFAULT_NAME_KEY] = pt_gene_utils.get_cur_label(random.randint(1, label_num))
                     non_fit_t.append(new_event)
             else:
                 non_fit_t.append(event)

@@ -5,9 +5,10 @@ And returns the histogram of the comparison.
 import time
 import random
 
+from align_repair.process_tree.stochastic_generation import stochastic_pt_create as pt_create
+from align_repair.process_tree.stochastic_generation import non_fitting_log_create as log_create
+
 from align_repair.evaluation import alignment_on_lock_pt, alignment_on_pt
-from align_repair.stochastic_generation.stochastic_pt_generation import randomly_create_new_tree
-from align_repair.stochastic_generation.non_fitting_eventlog_generation import create_non_fitting_eventlog
 
 
 def avg_runtime_without_lock(trees, logs):
@@ -55,18 +56,18 @@ def plot_histogram_lock_runtime(list1, list2):
 
 def compute_run_time():
     no_tree, no_event, pro = 1, 1, 0.8
-    tree1 = [randomly_create_new_tree(random.randint(11, 15)) for _ in range(no_tree)]
-    log1 = [create_non_fitting_eventlog(tree, no_event, pro) for tree in tree1]
-    tree2 = [randomly_create_new_tree(random.randint(16, 20)) for _ in range(no_tree)]
-    log2 = [create_non_fitting_eventlog(tree, no_event, pro) for tree in tree2]
-    tree3 = [randomly_create_new_tree(random.randint(21, 25)) for _ in range(no_tree)]
-    log3 = [create_non_fitting_eventlog(tree, no_event, pro) for tree in tree3]
-    tree4 = [randomly_create_new_tree(random.randint(26, 30)) for _ in range(no_tree)]
-    log4 = [create_non_fitting_eventlog(tree, no_event, pro) for tree in tree4]
-    # tree5 = [randomly_create_new_tree(random.randint(31, 33)) for _ in range(no_tree)]
-    # log5 = [create_non_fitting_eventlog(tree, no_event, pro) for tree in tree5]
-    # tree6 = [randomly_create_new_tree(random.randint(34, 35)) for _ in range(no_tree)]
-    # log6 = [create_non_fitting_eventlog(tree, no_event, pro) for tree in tree6]
+    tree1 = [pt_create.apply(random.randint(11, 15)) for _ in range(no_tree)]
+    log1 = [log_create.apply(tree, no_event, pro) for tree in tree1]
+    tree2 = [pt_create.apply(random.randint(16, 20)) for _ in range(no_tree)]
+    log2 = [log_create.apply(tree, no_event, pro) for tree in tree2]
+    tree3 = [pt_create.apply(random.randint(21, 25)) for _ in range(no_tree)]
+    log3 = [log_create.apply(tree, no_event, pro) for tree in tree3]
+    tree4 = [pt_create.apply(random.randint(26, 30)) for _ in range(no_tree)]
+    log4 = [log_create.apply(tree, no_event, pro) for tree in tree4]
+    # tree5 = [pt_create.apply(random.randint(31, 33)) for _ in range(no_tree)]
+    # log5 = [log_create.apply(tree, no_event, pro) for tree in tree5]
+    # tree6 = [pt_create.apply(random.randint(34, 35)) for _ in range(no_tree)]
+    # log6 = [log_create.apply(tree, no_event, pro) for tree in tree6]
     l_without_lock = list(map(lambda tree_log: avg_runtime_without_lock(tree_log[0], tree_log[1]),
                               [(tree1, log1), (tree2, log2), (tree3, log3), (tree4, log4)]))
     # [(tree1, log1), (tree2, log2), (tree3, log3), (tree4, log4), (tree5, log5), (tree6, log6)]))
