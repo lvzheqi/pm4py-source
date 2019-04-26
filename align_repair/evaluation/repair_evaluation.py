@@ -12,7 +12,6 @@ from align_repair.repair import scope_expand, general_scope_expand, align_repair
 from align_repair.evaluation import create_event_log, print_short_alignment, \
     alignment_on_lock_pt, get_best_cost_on_pt, print_event_log
 
-from xlwt import Workbook
 
 
 def compute_cost_and_time(tree, m_tree, log):

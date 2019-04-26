@@ -8,7 +8,7 @@ from align_repair.process_tree.stochastic_generation import utils as pt_gene_uti
 from align_repair.process_tree.manipulation import utils as pt_mani_utils
 
 
-def apply(tree, no, prob):
+def apply(tree, no, prob, has_empty_trace=False):
     """
     Returns non-fitting EventLog with fixed traces randomly created by the process tree.
 
@@ -20,6 +20,8 @@ def apply(tree, no, prob):
         Number of traces that will be in the event log
     prob
         Randomness of the traces
+    has_empty_trace
+        True, when the event log has empty trace
 
     Returns
     ------------
@@ -28,7 +30,9 @@ def apply(tree, no, prob):
     """
     log, non_fit_traces = generate_log(tree, no), list()
     label_num = pt_mani_utils.non_none_leaves_number(tree)
-    for trace in log:
+    traces = list(map(lambda t: t, log))
+    while len(traces) > 0:
+        trace = traces.pop()
         non_fit_t = Trace(attributes=log.attributes)
         for event in trace:
             if random.random() < prob:
@@ -44,6 +48,9 @@ def apply(tree, no, prob):
                     non_fit_t.append(new_event)
             else:
                 non_fit_t.append(event)
-        non_fit_traces.append(non_fit_t)
+        if not has_empty_trace and len(non_fit_t) == 0:
+            traces.append(generate_log(tree, 1)[0])
+        else:
+            non_fit_traces.append(non_fit_t)
     return EventLog(non_fit_traces, attributes=log.attributes, classifiers=log.classifiers,
                     omni_present=log.omni_present, extensions=log.extensions)
