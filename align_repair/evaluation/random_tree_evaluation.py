@@ -6,6 +6,11 @@ from align_repair.process_tree.manipulation import utils as pt_mani_utils
 from align_repair.evaluation.execl_operation import utils as excel_utils
 from align_repair.evaluation.execl_operation.excel_table import ExcelTable
 
+PT_NUM = [10 for _ in range(8)]
+PT_RANGE = [(11, 15), (16, 18), (19, 21), (22, 24), (25, 27), (28, 30), (31, 33), (34, 45)]
+MPT_NUM = 7
+MTP_LEVEL = [3, 4, 5, 6]
+
 
 def create_tree():
     """
@@ -41,21 +46,13 @@ def create_tree():
 
     """
     base = excel_utils.create_workbook()
-    mutate_tree_number = 10
     original_e_tab = ExcelTable(base.add_sheet("PT"))
-    mutate_tree_level = [3, 4, 5, 6]
     mutate_e_tabs = []
-    for i in mutate_tree_level:
+    for i in MTP_LEVEL:
         mutate_e_tab = ExcelTable(base.add_sheet("MPT" + str(i)))
         mutate_e_tabs.append(mutate_e_tab)
-    pt_write_to_table(original_e_tab, mutate_e_tabs, 150, 11, 15, mutate_tree_number, mutate_tree_level)
-    pt_write_to_table(original_e_tab, mutate_e_tabs, 150, 16, 18, mutate_tree_number, mutate_tree_level)
-    pt_write_to_table(original_e_tab, mutate_e_tabs, 150, 19, 21, mutate_tree_number, mutate_tree_level)
-    pt_write_to_table(original_e_tab, mutate_e_tabs, 150, 22, 24, mutate_tree_number, mutate_tree_level)
-    pt_write_to_table(original_e_tab, mutate_e_tabs, 150, 25, 27, mutate_tree_number, mutate_tree_level)
-    pt_write_to_table(original_e_tab, mutate_e_tabs, 150, 28, 30, mutate_tree_number, mutate_tree_level)
-    pt_write_to_table(original_e_tab, mutate_e_tabs, 150, 31, 33, mutate_tree_number, mutate_tree_level)
-    pt_write_to_table(original_e_tab, mutate_e_tabs, 10, 34, 45, mutate_tree_number, mutate_tree_level)
+        pt_write_to_table(original_e_tab, mutate_e_tabs, PT_NUM[i], PT_RANGE[i][0], PT_RANGE[i][0],
+                          MPT_NUM, MTP_LEVEL)
     excel_utils.save(base, 'ProcessTree.xls')
 
 
@@ -89,18 +86,16 @@ def mutate_tree_write_to_table(tab, m_tree, tree_info):
 
 
 def test_avg_mutate_tree_size():
-    diff_m = 0
+    trees = []
     for i in range(100):
         tree = pt_create.apply(10)
         # trees = [str(tree)]
-        trees = []
         while len(trees) < 10:
             if str(tree) not in trees:
                 m_tree = pt_mutate.apply(tree, 3)
                 trees.append(str(m_tree))
             # else:
             #     break
-        diff_m += len(trees)
     print(len(trees))
 
 
