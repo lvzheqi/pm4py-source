@@ -1,12 +1,10 @@
 import xlrd
 import xlwt
-from xlutils.copy import copy
 
 
-def open_excel(file, formatting_info=False):
+def open_excel(file):
     try:
         data = xlrd.open_workbook(file)
-        # data = copy(data) if formatting_info else data
         return data
     except Exception as e:
         print(e)

@@ -1,15 +1,16 @@
 import random
 
+from pm4py.objects.log.util.xes import DEFAULT_NAME_KEY
+
 from align_repair.process_tree.stochastic_generation import stochastic_pt_create as pt_create
 from align_repair.process_tree.stochastic_generation import stochastic_pt_mutate as pt_mutate
 from align_repair.process_tree.manipulation import utils as pt_mani_utils
-from align_repair.evaluation.execl_operation import utils as excel_utils
+from align_repair.evaluation.execl_operation import utils as excel_utils, object_read
 from align_repair.evaluation.execl_operation.excel_table import ExcelTable
-
-PT_NUM = [10 for _ in range(8)]
-PT_RANGE = [(11, 15), (16, 18), (19, 21), (22, 24), (25, 27), (28, 30), (31, 33), (34, 45)]
-MPT_NUM = 7
-MTP_LEVEL = [3, 4, 5, 6]
+from align_repair.process_tree.stochastic_generation import non_fitting_log_create as log_create
+from align_repair.evaluation import alignment_on_lock_pt
+from align_repair.evaluation.config import PT_NUM, LOG_SHEET_NAME, ALIGN_SHEET_NAME, TRACE_NUM, \
+    PT_FILE_NAME, LOG_FILE_NAME, ALIGN_FILE_NAME, MPT_NUM, MTP_LEVEL, PT_RANGE
 
 
 def create_tree():
@@ -48,12 +49,12 @@ def create_tree():
     base = excel_utils.create_workbook()
     original_e_tab = ExcelTable(base.add_sheet("PT"))
     mutate_e_tabs = []
-    for i in MTP_LEVEL:
-        mutate_e_tab = ExcelTable(base.add_sheet("MPT" + str(i)))
+    for level in MTP_LEVEL:
+        mutate_e_tab = ExcelTable(base.add_sheet("MPT" + str(level)))
         mutate_e_tabs.append(mutate_e_tab)
-        pt_write_to_table(original_e_tab, mutate_e_tabs, PT_NUM[i], PT_RANGE[i][0], PT_RANGE[i][0],
-                          MPT_NUM, MTP_LEVEL)
-    excel_utils.save(base, 'ProcessTree.xls')
+    for i in range(len(PT_NUM)):
+        pt_write_to_table(original_e_tab, mutate_e_tabs, PT_NUM[i], PT_RANGE[i][0], PT_RANGE[i][0], MPT_NUM, MTP_LEVEL)
+    excel_utils.save(base, PT_FILE_NAME)
 
 
 def pt_write_to_table(tab, mutate_tabs, num, l, u, mutate_num, mutate_level):
@@ -74,7 +75,7 @@ def uniq_mutate_tree(tree, mutate_num, mutate_tree_level):
     while len(m_trees) < mutate_num:
         if str(tree) not in m_trees:
             m_tree = pt_mutate.apply(tree, mutate_tree_level)
-            m_trees.append(str(m_tree))
+            m_trees.append(m_tree)
     return m_trees
 
 
@@ -83,6 +84,47 @@ def mutate_tree_write_to_table(tab, m_tree, tree_info):
                                                                     " " + str(m_tree),
                                                                     pt_mani_utils.leaves_number(m_tree),
                                                                     pt_mani_utils.pt_depth(m_tree)])
+
+
+def create_log():
+    """
+    Create specified number of event logs of each tree, not including Empty Trace.
+
+    The event log in the same column belong to the same process tree.
+    """
+    base = excel_utils.create_workbook()
+    trees = object_read.read_trees_from_file(PT_FILE_NAME)
+    log_e_table = None
+    for row, tree in enumerate(trees):
+        if row % PT_NUM[0] == 0:
+            log_e_table = ExcelTable(base.add_sheet(LOG_SHEET_NAME[row // PT_NUM[0]]))
+        log = log_create.apply(tree, TRACE_NUM, 0.8)
+        trace_list = [[event[DEFAULT_NAME_KEY] for event in trace] for trace in log]
+        excel_utils.write_column_to_table(log_e_table.table, log_e_table.column, trace_list)
+    excel_utils.save(base, LOG_FILE_NAME)
+
+
+def compute_alignment():
+    """
+    Create specified number of event logs of each tree, not including Empty Trace.
+
+    The event log in the same column belong to the same process tree.
+    """
+    trees = object_read.read_trees_from_file(PT_FILE_NAME)
+    logs = object_read.read_logs_from_file(LOG_FILE_NAME)
+    base = excel_utils.create_workbook()
+    align_e_table = None
+    for row, tree in enumerate(trees):
+        if row % PT_NUM[0] == 0:
+            align_e_table = ExcelTable(base.add_sheet(ALIGN_SHEET_NAME[row // PT_NUM[0]]))
+        alignments = alignment_on_lock_pt(tree, logs[row])
+        align_list = list(map(str, alignments))
+        excel_utils.write_column_to_table(align_e_table.table, align_e_table.column, align_list)
+    excel_utils.save(base, ALIGN_FILE_NAME)
+
+
+if __name__ == "__main__":
+    compute_alignment()
 
 
 def test_avg_mutate_tree_size():
@@ -97,8 +139,3 @@ def test_avg_mutate_tree_size():
             # else:
             #     break
     print(len(trees))
-
-
-if __name__ == "__main__":
-    # create_tree()
-    test_avg_mutate_tree_size()

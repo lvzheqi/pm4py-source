@@ -13,7 +13,6 @@ from align_repair.evaluation import create_event_log, print_short_alignment, \
     alignment_on_lock_pt, get_best_cost_on_pt, print_event_log
 
 
-
 def compute_cost_and_time(tree, m_tree, log):
 
     pt_number.apply(tree, 'D', 1)
