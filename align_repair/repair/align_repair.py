@@ -166,11 +166,11 @@ def apply(tree1, tree2, log, alignments):
     # TODO: if the given alignment is not True, try-catch
     alignments = copy.deepcopy(alignments)
     com_res = pt_compare.apply(tree1, tree2)
-    tree1_total_number = pt_mani_utils.nodes_number(tree1)
-    pt_number.apply(com_res.subtree2, 'D', tree1_total_number + 1)
     if com_res.value:
         return alignments
     else:
+        tree1_total_number = pt_mani_utils.nodes_number(tree1)
+        pt_number.apply(com_res.subtree2, 'D', tree1_total_number + 1)
         best_worst_cost = apply_pt_alignments(EventLog([Trace()]), tree2)[0]['cost']
         for i in range(len(alignments)):
             align = alignments[i]

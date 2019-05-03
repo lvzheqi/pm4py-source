@@ -1,5 +1,6 @@
 import time
 import random
+from xlwt import Workbook
 
 from pm4py.algo.conformance import alignments as ali
 from pm4py.objects.process_tree import util as pt_utils
@@ -25,7 +26,6 @@ def compute_cost_and_time(tree, m_tree, log):
     end = time.time()
     optimal_time = end - start
     optimal_cost = sum([align['cost'] for align in optimal_alignments])
-
     best_worst_cost = sum([get_best_cost_on_pt(tree) + len(trace) * ali.utils.STD_MODEL_LOG_MOVE_COST for trace in log])
 
     start = time.time()
@@ -71,7 +71,7 @@ def alignment_quality_log_based_on_tree1():
     # creat_non_fitting_based_on_tree1(file, "Node21-25", [21, 25])
     # creat_non_fitting_based_on_tree1(file, "Node26-30", [26, 30])
 
-    # file.save('L11_data.xls')
+    file.save('xls/L11_data.xls')
 
 
 def creat_non_fitting_based_on_tree1(file, name, node_num):
@@ -103,7 +103,7 @@ def alignment_quality_log_based_on_tree2():
     # creat_non_fitting_based_on_tree2(file, "Node21-25", [21, 25])
     # creat_non_fitting_based_on_tree2(file, "Node26-30", [26, 30])
 
-    # file.save('L22_data.xls')
+    file.save('xls/L22_data.xls')
     # example()
 
 
@@ -128,9 +128,9 @@ def creat_non_fitting_based_on_tree2(file, name, node_num):
 
 
 def test_compute_cost_time():
-    tree1 = pt_utils.parse("*( a, X( f, g, +( c, X( d, e ) ), b ), τ )")
-    tree2 = pt_utils.parse("*( a, X( f, g, k, +( c, X( d, e ) ), b ), τ )")
-    log = create_event_log("ak")
+    tree1 = pt_utils.parse("+( ->( e, f ), *( b, ->( c, d ), τ ), a ")
+    tree2 = pt_utils.parse("+( ->( e, f ), *( b, τ, τ ), a )")
+    log = create_event_log("gaehf, cbfa, ahebf, ehdc, gfbcdhfchbcdbhgb, abhbfh, aefa, bcehfh, ahafcdbdb, efh")
 
     result = compute_cost_and_time(tree1, tree2, log)
     print_tree_align_compare(result)
@@ -157,5 +157,5 @@ def print_intermediate_result(tree, m_tree, log, alignments, optimal_alignments,
 
 
 if __name__ == "__main__":
+    # test_compute_cost_time()
     alignment_quality_log_based_on_tree1()
-    alignment_quality_log_based_on_tree2()
