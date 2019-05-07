@@ -158,7 +158,7 @@ def read_expand_repair_grade_not_equal_to_one(repair_file_result, mpt_index, ali
         for row in range(table.nrows):
             if float(table.row_values(row)[9]) != 1:
                 num_list.append(num)
-                original_info[num] = table.row_values(row)
+                original_info[num] = [num] + table.row_values(row)
             num += 1
     trees = read_trees_from_file(PT_FILE_NAME, 0)
     m_trees = read_trees_from_file(PT_FILE_NAME, mpt_index)

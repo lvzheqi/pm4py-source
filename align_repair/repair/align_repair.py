@@ -169,7 +169,6 @@ def apply(tree1, tree2, log, alignments, parameters=None):
     # TODO: if the given alignment is not True, try-catch
     alignments = copy.deepcopy(alignments)
     com_res = pt_compare.apply(tree1, tree2, parameters['COMPARE_OPTION'])
-    print(com_res.subtree1, com_res.subtree2)
     if com_res.value:
         return alignments
     else:

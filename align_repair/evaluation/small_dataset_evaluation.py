@@ -16,7 +16,7 @@ from align_repair.evaluation import create_event_log, print_short_alignment, \
 
 def compute_cost_and_time(tree, m_tree, log):
 
-    parameters = {'COMPARE_OPTION': 2}
+    parameters = {'COMPARE_OPTION': 1}
 
     pt_number.apply(tree, 'D', 1)
     pt_number.apply(m_tree, 'D', 1)
@@ -130,9 +130,9 @@ def creat_non_fitting_based_on_tree2(file, name, node_num):
 
 
 def test_compute_cost_time():
-    tree1 = pt_utils.parse("+( h, i, ->( X( +( f, g ), b ), +( ->( c, X( d, e ) ), a ) ) )")
-    tree2 = pt_utils.parse("+( h, i, ->( X( +( f, g ), b ), +( X( d, e ), a ) ) )")
-    log = create_event_log("hbace, hfgjcjd")
+    tree1 = pt_utils.parse("*( a, ->( X( b, ->( c, d ) ), e, f ), τ )")
+    tree2 = pt_utils.parse("*( a, ->( *( b, ->( c, d ), τ ), e, f ), τ )")
+    log = create_event_log("eaefhah, abhfagbbebhehfhg, e, bchehfhah, fchbcfbeahbbfhb, ehah, gchdcfhah, fhbhfhae, fdheba, aee")
 
     result = compute_cost_and_time(tree1, tree2, log)
     print_tree_align_compare(result)
@@ -159,5 +159,5 @@ def print_intermediate_result(tree, m_tree, log, alignments, optimal_alignments,
 
 
 if __name__ == "__main__":
-    # test_compute_cost_time()
-    alignment_quality_log_based_on_tree1()
+    test_compute_cost_time()
+    # alignment_quality_log_based_on_tree1()
