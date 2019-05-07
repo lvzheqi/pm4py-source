@@ -16,11 +16,14 @@ from align_repair.evaluation import create_event_log, print_short_alignment, \
 
 def compute_cost_and_time(tree, m_tree, log):
 
+    parameters = {'COMPARE_OPTION': 2}
+
     pt_number.apply(tree, 'D', 1)
     pt_number.apply(m_tree, 'D', 1)
 
     alignments = alignment_on_lock_pt(tree, log)
-
+    import copy
+    print_short_alignment(copy.deepcopy(alignments))
     start = time.time()
     optimal_alignments = alignment_on_lock_pt(m_tree, log)
     end = time.time()
@@ -35,19 +38,18 @@ def compute_cost_and_time(tree, m_tree, log):
     repaired_cost = sum([align['cost'] for align in repair_alignments])
 
     start = time.time()
-    s_aligns = scope_expand.apply(alignments, tree, m_tree)
-    scope_repaired_alignments = align_repair.apply(tree, m_tree, log, s_aligns)
+    s_aligns = scope_expand.apply(alignments, tree, m_tree, parameters)
+    scope_repaired_alignments = align_repair.apply(tree, m_tree, log, s_aligns, parameters)
     end = time.time()
     scope_repaired_time = end - start
     scope_repaired_cost = sum([align['cost'] for align in scope_repaired_alignments])
 
-    start = time.time()
-    s_aligns = general_scope_expand.apply(alignments, tree, m_tree)
-    g_scope_repaired_alignments = align_repair.apply(tree, m_tree, log, s_aligns)
-    end = time.time()
-    g_scope_repaired_time = end - start
-    g_scope_repaired_cost = sum([align['cost'] for align in g_scope_repaired_alignments])
-    print(g_scope_repaired_time, g_scope_repaired_cost)
+    # start = time.time()
+    # s_aligns = general_scope_expand.apply(alignments, tree, m_tree)
+    # g_scope_repaired_alignments = align_repair.apply(tree, m_tree, log, s_aligns)
+    # end = time.time()
+    # g_scope_repaired_time = end - start
+    # g_scope_repaired_cost = sum([align['cost'] for align in g_scope_repaired_alignments])
 
     print_intermediate_result(tree, m_tree, log, alignments, optimal_alignments, repair_alignments,
                               scope_repaired_alignments)
@@ -71,13 +73,13 @@ def alignment_quality_log_based_on_tree1():
     # creat_non_fitting_based_on_tree1(file, "Node21-25", [21, 25])
     # creat_non_fitting_based_on_tree1(file, "Node26-30", [26, 30])
 
-    file.save('xls/L11_data.xls')
+    file.save('xls/small/L11_data.xls')
 
 
 def creat_non_fitting_based_on_tree1(file, name, node_num):
     num = ["node", "best_worst_cost", "optimal_cost", "optimal_time", "repaired_cost", "repaired_time",
            "scope_repair_cost", "scope_repair_time", "grade1", "grade2"]
-    tree_num, mutated_num, log_num, non_fit_pro = 5, 1, 5, 0.8
+    tree_num, mutated_num, log_num, non_fit_pro = 25, 1, 1, 0.9
     row_index = 0
     table = file.add_sheet(name)
     tree = [pt_create.apply(random.randint(node_num[0], node_num[1])) for _ in range(tree_num)]
@@ -103,14 +105,14 @@ def alignment_quality_log_based_on_tree2():
     # creat_non_fitting_based_on_tree2(file, "Node21-25", [21, 25])
     # creat_non_fitting_based_on_tree2(file, "Node26-30", [26, 30])
 
-    file.save('xls/L22_data.xls')
+    file.save('xls/small/L22_data.xls')
     # example()
 
 
 def creat_non_fitting_based_on_tree2(file, name, node_num):
     num = ["node", "best_worst_cost", "optimal_cost", "optimal_time", "repaired_cost", "repaired_time",
            "scope_repair_cost", "scope_repair_time", "grade1", "grade2"]
-    tree_num, mutated_num, log_num, non_fit_pro = 5, 1, 5, 0.8
+    tree_num, mutated_num, log_num, non_fit_pro = 25, 1, 1, 0.9
     row_index = 0
     table = file.add_sheet(name)
     tree = [pt_create.apply(random.randint(node_num[0], node_num[1])) for _ in range(tree_num)]
@@ -128,9 +130,9 @@ def creat_non_fitting_based_on_tree2(file, name, node_num):
 
 
 def test_compute_cost_time():
-    tree1 = pt_utils.parse("+( ->( e, f ), *( b, ->( c, d ), τ ), a ")
-    tree2 = pt_utils.parse("+( ->( e, f ), *( b, τ, τ ), a )")
-    log = create_event_log("gaehf, cbfa, ahebf, ehdc, gfbcdhfchbcdbhgb, abhbfh, aefa, bcehfh, ahafcdbdb, efh")
+    tree1 = pt_utils.parse("+( h, i, ->( X( +( f, g ), b ), +( ->( c, X( d, e ) ), a ) ) )")
+    tree2 = pt_utils.parse("+( h, i, ->( X( +( f, g ), b ), +( X( d, e ), a ) ) )")
+    log = create_event_log("hbace, hfgjcjd")
 
     result = compute_cost_and_time(tree1, tree2, log)
     print_tree_align_compare(result)

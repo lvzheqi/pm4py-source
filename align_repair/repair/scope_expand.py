@@ -249,9 +249,11 @@ def scope_expand_trace(align, subtree):
     return align
 
 
-def apply(alignments, tree, m_tree):
+def apply(alignments, tree, m_tree, parameters=None):
+    parameters = {} if parameters is None else parameters
+    parameters['COMPARE_OPTION'] = 1 if parameters.get('COMPARE_OPTION') is None else parameters['COMPARE_OPTION']
     alignments = copy.deepcopy(alignments)
-    com_res = pt_compare.apply(tree, m_tree)
+    com_res = pt_compare.apply(tree, m_tree, parameters['COMPARE_OPTION'])
     if not com_res.value:
         for align in alignments:
             if align.get("expand") is None:

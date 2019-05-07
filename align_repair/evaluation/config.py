@@ -41,4 +41,11 @@ EAP3_FILE_NAME = os.path.join("xls", "EXP3.xls")
 EAP4_FILE_NAME = os.path.join("xls", "EXP4.xls")
 EAP_ALIGNS = [EAP1_FILE_NAME, EAP2_FILE_NAME, EAP3_FILE_NAME, EAP4_FILE_NAME]
 
+OP2_REPAIR1_RESULT = os.path.join("xls", "Op2RepairResult1.xls")
+OP2_REPAIR2_RESULT = os.path.join("xls", "Op2RepairResult2.xls")
+OP2_REPAIR3_RESULT = os.path.join("xls", "Op2RepairResult3.xls")
+OP2_REPAIR4_RESULT = os.path.join("xls", "Op2RepairResult4.xls")
+OP2_REPAIR_RESULTS = [OP2_REPAIR1_RESULT, OP2_REPAIR2_RESULT, OP2_REPAIR3_RESULT, OP2_REPAIR4_RESULT]
+
+
 # TODO: Consider how to translate more variable

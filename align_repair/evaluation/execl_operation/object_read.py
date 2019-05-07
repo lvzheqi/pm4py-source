@@ -3,7 +3,8 @@ from ast import literal_eval
 from pm4py.objects.process_tree import util as pt_utils
 
 from align_repair.evaluation.execl_operation import utils as excel_utils
-from align_repair.evaluation.config import LOG_SHEET_NAME, ALIGN_SHEET_NAME, TRACE_NUM
+from align_repair.evaluation.config import LOG_SHEET_NAME, ALIGN_SHEET_NAME, TRACE_NUM, \
+    PT_FILE_NAME, LOG_FILE_NAME, ALIGN_FILE_NAME, MPT_NUM
 from align_repair.evaluation import create_event_log
 
 
@@ -146,3 +147,23 @@ def read_repair_result_from_file(align_mt_file, repair_file):
             align_result[num].set_repair_info(result[4], result[5], result[6], result[7], result[8], result[9])
             num += 1
     return align_result
+
+
+def read_expand_repair_grade_not_equal_to_one(repair_file_result, mpt_index, align_mpt):
+    data = excel_utils.open_excel(repair_file_result)
+    num, num_list = 0, list()
+    original_info = dict()
+    for index in range(len(ALIGN_SHEET_NAME)):
+        table = data.sheets()[index]
+        for row in range(table.nrows):
+            if float(table.row_values(row)[9]) != 1:
+                num_list.append(num)
+                original_info[num] = table.row_values(row)
+            num += 1
+    trees = read_trees_from_file(PT_FILE_NAME, 0)
+    m_trees = read_trees_from_file(PT_FILE_NAME, mpt_index)
+    logs = read_logs_from_file(LOG_FILE_NAME)
+    alignments_t1 = read_align_from_file(ALIGN_FILE_NAME)
+    alignments_t2 = read_align_from_file(align_mpt)
+    return [(original_info[i], trees[i//MPT_NUM], m_trees[i], logs[i//MPT_NUM], alignments_t1[i//MPT_NUM],
+             alignments_t2[i]) for i in num_list]

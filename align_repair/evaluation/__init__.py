@@ -33,7 +33,7 @@ def print_event_log(log):
 def is_silent_move(align):
     align = align[1]
     if align[0] == ali.utils.SKIP and (align[1] is None or align[1].endswith(pt_align_utils.LOCK_START)
-                                       or align[1].endswith(pt_align_utils.LOCK_START)):
+                                       or align[1].endswith(pt_align_utils.LOCK_END)):
         return False
     return True
 

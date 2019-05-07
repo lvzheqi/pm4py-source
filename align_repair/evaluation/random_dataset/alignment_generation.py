@@ -54,7 +54,7 @@ def align_info(tree, log):
     return align_list + [optimal_time, optimal_time_lock, optimal_cost, best_worst_cost]
 
 
-def compute_repair_result(align_mt_tree, expand_repair_file, result_file):
+def compute_repair_result(mpt_index, align_mpt, expand_repair_file, result_file):
     """
     Record repair alignment
 
@@ -68,10 +68,10 @@ def compute_repair_result(align_mt_tree, expand_repair_file, result_file):
     time, cost, expand_repair_alignments, time, cost
     """
     trees = object_read.read_trees_from_file(PT_FILE_NAME, 0)
-    m_trees = object_read.read_trees_from_file(PT_FILE_NAME, 1)
+    m_trees = object_read.read_trees_from_file(PT_FILE_NAME, mpt_index)
     logs = object_read.read_logs_from_file(LOG_FILE_NAME)
     alignments_t1 = object_read.read_align_from_file(ALIGN_FILE_NAME)
-    alignments_t2 = object_read.read_align_from_file(align_mt_tree)
+    alignments_t2 = object_read.read_align_from_file(align_mpt)
 
     base = excel_utils.create_workbook()
     expand_repair_repair = excel_utils.create_workbook()
@@ -97,9 +97,30 @@ def compute_repair_result(align_mt_tree, expand_repair_file, result_file):
     excel_utils.save(expand_repair_repair, expand_repair_file)
 
 
-def repair_align_info(tree, m_tree, log, alignments, best_worst_cost, cost_opt):
+def compute_repair_result_option2(repair_file_result, mpt_index, align_mpt, result_file):
+    """
+
+    Records
+    ----------
+
+    """
+    input_list = object_read.read_expand_repair_grade_not_equal_to_one(repair_file_result, mpt_index, align_mpt)
+    base = excel_utils.create_workbook()
+    expand_e_table = ExcelTable(base.add_sheet("COMPARE"))
+    parameters = {'COMPARE_OPTION': 2}
+    for (o_info, tree, m_tree, log, alignment_t1, alignment_t2) in input_list:
+        pt_number.apply(tree, 'D', 1)
+        pt_number.apply(m_tree, 'D', 1)
+        expand_repair_info = expand_repair_align_info(tree, m_tree, log, alignment_t1.aligns,
+                                                      alignment_t2.best_worst_cost, alignment_t2.cost_opt, parameters)
+        excel_utils.write_row_to_table(expand_e_table.table, expand_e_table.column, o_info + expand_repair_info[1])
+
+    excel_utils.save(base, result_file)
+
+
+def repair_align_info(tree, m_tree, log, alignments, best_worst_cost, cost_opt, option=None):
     start = time.time()
-    repair_alignments = align_repair.apply(tree, m_tree, log, alignments)
+    repair_alignments = align_repair.apply(tree, m_tree, log, alignments, option)
     end = time.time()
     cost_repair = sum([align['cost'] for align in repair_alignments])
     grade = 1 - (cost_repair - cost_opt) / (best_worst_cost - cost_opt) \
@@ -107,10 +128,10 @@ def repair_align_info(tree, m_tree, log, alignments, best_worst_cost, cost_opt):
     return [[str(repair_alignments), end - start, cost_repair], [end - start, cost_repair, grade]]
 
 
-def expand_repair_align_info(tree, m_tree, log, alignments, best_worst_cost, cost_opt):
+def expand_repair_align_info(tree, m_tree, log, alignments, best_worst_cost, cost_opt, option=None):
     start = time.time()
-    s_aligns = scope_expand.apply(alignments, tree, m_tree)
-    scope_repaired_alignments = align_repair.apply(tree, m_tree, log, s_aligns)
+    s_aligns = scope_expand.apply(alignments, tree, m_tree, option)
+    scope_repaired_alignments = align_repair.apply(tree, m_tree, log, s_aligns, option)
     end = time.time()
     cost_expand = sum([align['cost'] for align in scope_repaired_alignments])
     grade = 1 - (cost_expand - cost_opt) / (best_worst_cost - cost_opt) \

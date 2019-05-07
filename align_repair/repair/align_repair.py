@@ -143,7 +143,7 @@ def apply_pt_alignments(log, tree):
     return align_factory.apply_log(log, net, initial_marking, final_marking, new_parameters)
 
 
-def apply(tree1, tree2, log, alignments):
+def apply(tree1, tree2, log, alignments, parameters=None):
     """
     Alignment repair on tree2 based on the alignment of log on tree1
 
@@ -157,15 +157,19 @@ def apply(tree1, tree2, log, alignments):
             EventLog
         alignments
             related alignment of log on tree1
+        parameters
 
     Returns
     ------------
     alignments
         repaired alignments
     """
+    parameters = {} if parameters is None else parameters
+    parameters['COMPARE_OPTION'] = 1 if parameters.get('COMPARE_OPTION') is None else parameters['COMPARE_OPTION']
     # TODO: if the given alignment is not True, try-catch
     alignments = copy.deepcopy(alignments)
-    com_res = pt_compare.apply(tree1, tree2)
+    com_res = pt_compare.apply(tree1, tree2, parameters['COMPARE_OPTION'])
+    print(com_res.subtree1, com_res.subtree2)
     if com_res.value:
         return alignments
     else:

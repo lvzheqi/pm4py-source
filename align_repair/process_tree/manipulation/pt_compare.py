@@ -27,7 +27,7 @@ class CompareResult(object):
     subtree2 = property(_get_subtree2)
 
 
-def apply(tree1, tree2):
+def apply(tree1, tree2, option=1):
     """
     Compare process trees and return two smallest subtree that cause different in the original trees,
     otherwise return True, None, None.
@@ -38,27 +38,29 @@ def apply(tree1, tree2):
             Process Tree
         tree2
             Process Tree
+        option
+
     Returns
     ------------
         CompareResult
     """
-
+    value, sub1, sub2 = True, None, None
     if tree1.operator is not None and tree2.operator is not None and tree1.operator != tree2.operator:
-        return CompareResult(False, tree1, tree2)
-    if (tree1.parent is None or tree2.parent is None) and \
+        value, sub1, sub2 = False, tree1, tree2
+    elif (tree1.parent is None or tree2.parent is None) and \
             (tree1.operator != tree2.operator or tree1.label != tree2.label):
-        return CompareResult(False, tree1, tree2)
-    if tree1.operator != tree2.operator or tree1.label != tree2.label:
-        return CompareResult(False, tree1.parent, tree2.parent)
+        value, sub1, sub2 = False, tree1, tree2
+    elif tree1.operator != tree2.operator or tree1.label != tree2.label:
+        value, sub1, sub2 = False, tree1.parent, tree2.parent
 
-    if tree1.operator is not None:
+    elif tree1.operator is not None:
         if len(tree1.children) != len(tree2.children):
-            return CompareResult(False, tree1, tree2)
+            value, sub1, sub2 = False, tree1, tree2
 
-        if tree1.operator == Operator.SEQUENCE or tree1.operator == Operator.LOOP:
+        elif tree1.operator == Operator.SEQUENCE or tree1.operator == Operator.LOOP:
             flag, subtree1, subtree2 = 0, None, None
             for i in range(len(tree1.children)):
-                com_res = apply(tree1.children[i], tree2.children[i])
+                com_res = apply(tree1.children[i], tree2.children[i], option)
                 if not com_res.value and flag == 0:
                     subtree1, subtree2 = com_res.subtree1, com_res.subtree2
                     flag += 1
@@ -67,22 +69,25 @@ def apply(tree1, tree2):
                 elif flag == 2:
                     break
             if flag == 2:
-                return CompareResult(False, tree1, tree2)
+                value, sub1, sub2 = False, tree1, tree2
             elif flag == 1:
-                return CompareResult(False, subtree1, subtree2)
+                value, sub1, sub2 = False, subtree1, subtree2
 
         elif tree1.operator == Operator.XOR or tree1.operator == Operator.PARALLEL:
             children1 = [child for child in tree1.children]
             children2 = [child for child in tree2.children]
             for i in range(len(children1)-1, -1, -1):
                 for j in range(len(children2)-1, -1, -1):
-                    com_res = apply(children1[i], children2[j])
+                    com_res = apply(children1[i], children2[j], option)
                     if com_res.value:
                         children1.pop(i)
                         children2.pop(j)
                         break
             if len(children2) > 1:
-                return CompareResult(False, tree1, tree2)
+                value, sub1, sub2 = False, tree1, tree2
             elif len(children2) == 1:
-                return apply(children1.pop(), children2.pop())
-    return CompareResult(True, None, None)
+                return apply(children1.pop(), children2.pop(), option)
+    if option == 2 and sub1 is not None and sub1.parent is not None and \
+            (sub1.parent.operator == Operator.LOOP or sub1.parent.operator == Operator.XOR):
+        return CompareResult(value, sub1.parent, sub2.parent)
+    return CompareResult(value, sub1, sub2)
