@@ -48,18 +48,20 @@ def check_model_label_belong_to_subtree(move, subtree_labels, ret_tuple_as_trans
     align_name = move[0] if ret_tuple_as_trans_desc else move
     if align_label[1] in subtree_labels:
         return True
-    if align_label[0] == align_utils.SKIP:
+    if align_label[0] == align_utils.SKIP and ret_tuple_as_trans_desc:
         s_name = align_name[1].split("_")
         if len(s_name) == 3 and "".join([s_name[0], "_", s_name[1]]) in subtree_labels:
             return True
+    if align_label[0] == align_utils.SKIP and not ret_tuple_as_trans_desc:
+        return True
     return False
 
 
-def alignment_parameters(net):
+def alignment_parameters(net, std_log_cost=2):
     model_cost_function, sync_cost_function = dict(), dict()
     for t in net.transitions:
         if t.label is not None and not t.label.endswith(LOCK_START) and not t.label.endswith(LOCK_END):
-            model_cost_function[t] = 2
+            model_cost_function[t] = std_log_cost
             sync_cost_function[t] = STD_SYNC_COST
         else:
             model_cost_function[t] = STD_TAU_COST

@@ -64,6 +64,15 @@ def alignment_on_lock_pt(tree, log):
     return alignments
 
 
+def alignment_on_loop_lock_pt(tree, log):
+    net, initial_marking, final_marking = pt_to_lock_net.apply(tree, {'PARAM_LOOP_LOCK': True})
+    parameters = pt_align_utils.alignment_parameters(net)
+    parameters['ret_tuple_as_trans_desc'] = False
+    parameters['PARAM_LOOP_LOCK'] = True
+    alignments = align_factory.apply_log(log, net, initial_marking, final_marking, parameters)
+    return alignments
+
+
 def get_best_cost_on_pt(tree):
     return alignment_on_lock_pt(tree, EventLog([Trace()]))[0]['cost']
 
