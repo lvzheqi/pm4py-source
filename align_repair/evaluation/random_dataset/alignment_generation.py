@@ -128,7 +128,7 @@ def repair_align_info(tree, m_tree, log, alignments, best_worst_cost, cost_opt, 
     cost_repair = sum([align['cost'] for align in repair_alignments])
     grade = 1 - (cost_repair - cost_opt) / (best_worst_cost - cost_opt) \
         if best_worst_cost != cost_opt else 1
-    return [str([[[r] for r in repair_alignments], end - start, cost_repair]), [end - start, cost_repair, grade]]
+    return [[str(r) for r in repair_alignments] + [end - start, cost_repair], [end - start, cost_repair, grade]]
 
 
 def expand_repair_align_info(tree, m_tree, log, alignments, best_worst_cost, cost_opt, parameters=None):
@@ -139,7 +139,7 @@ def expand_repair_align_info(tree, m_tree, log, alignments, best_worst_cost, cos
     cost_expand = sum([align['cost'] for align in scope_repaired_alignments])
     grade = 1 - (cost_expand - cost_opt) / (best_worst_cost - cost_opt) \
         if best_worst_cost != cost_opt else 1
-    return [str([[[r] for r in scope_repaired_alignments], end - start, cost_expand]),
+    return [[str(r) for r in scope_repaired_alignments] + [end - start, cost_expand],
             [end - start, cost_expand, grade]]
 
 
@@ -151,5 +151,5 @@ def expand_gen_repair_align_info(tree, m_tree, log, alignments, best_worst_cost,
     cost_expand = sum([align['cost'] for align in scope_repaired_alignments])
     grade = 1 - (cost_expand - cost_opt) / (best_worst_cost - cost_opt) \
         if best_worst_cost != cost_opt else 1
-    return [str([[[r] for r in scope_repaired_alignments], end - start, cost_expand]),
+    return [[str(r) for r in scope_repaired_alignments] + [end - start, cost_expand],
             [end - start, cost_expand, grade]]
