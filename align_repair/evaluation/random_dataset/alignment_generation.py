@@ -77,19 +77,20 @@ def compute_repair_result(mpt_index, align_mpt, expand_repair_file, result_file)
     base = excel_utils.create_workbook()
     expand_repair_repair = excel_utils.create_workbook()
     result_e_table, expand_e_table = None, None
+    parameters = {'ret_tuple_as_trans_desc': True}
     for row, m_tree in enumerate(m_trees):
-        print("align:", row)
         if row % (PT_NUM[0] * MPT_NUM) == 0:
-            result_e_table = ExcelTable(base.add_sheet(REPAIR_SHEET_NAME[row//(PT_NUM[0] * MPT_NUM)]))
-            expand_e_table = ExcelTable(expand_repair_repair.add_sheet(ALIGN_SHEET_NAME[row//(PT_NUM[0] * MPT_NUM)]))
-        pt_number.apply(trees[row//MPT_NUM], 'D', 1)
+            result_e_table = ExcelTable(base.add_sheet(REPAIR_SHEET_NAME[row // (PT_NUM[0] * MPT_NUM)]))
+            expand_e_table = ExcelTable(expand_repair_repair.add_sheet(ALIGN_SHEET_NAME[row // (PT_NUM[0] * MPT_NUM)]))
+        pt_number.apply(trees[row // MPT_NUM], 'D', 1)
         pt_number.apply(m_tree, 'D', 1)
-        repair_info = repair_align_info(trees[row//MPT_NUM], m_tree, logs[row//MPT_NUM],
-                                        alignments_t1[row//MPT_NUM].aligns,
-                                        alignments_t2[row].best_worst_cost, alignments_t2[row].cost_opt)
-        expand_repair_info = expand_repair_align_info(trees[row//MPT_NUM], m_tree, logs[row//MPT_NUM],
-                                                      alignments_t1[row//MPT_NUM].aligns,
-                                                      alignments_t2[row].best_worst_cost, alignments_t2[row].cost_opt)
+        repair_info = repair_align_info(trees[row // MPT_NUM], m_tree, logs[row // MPT_NUM],
+                                        alignments_t1[row // MPT_NUM].aligns,
+                                        alignments_t2[row].best_worst_cost, alignments_t2[row].cost_opt, parameters)
+        expand_repair_info = expand_repair_align_info(trees[row // MPT_NUM], m_tree, logs[row // MPT_NUM],
+                                                      alignments_t1[row // MPT_NUM].aligns,
+                                                      alignments_t2[row].best_worst_cost, alignments_t2[row].cost_opt,
+                                                      parameters)
 
         excel_utils.write_column_to_table(expand_e_table.table, expand_e_table.column, expand_repair_info[0])
         excel_utils.write_row_to_table(result_e_table.table, result_e_table.row,
@@ -109,9 +110,8 @@ def compute_repair_result_option2(repair_file_result, mpt_index, align_mpt, resu
     input_list = object_read.read_expand_repair_grade_not_equal_to_one(repair_file_result, mpt_index, align_mpt)
     base = excel_utils.create_workbook()
     expand_e_table = ExcelTable(base.add_sheet("COMPARE"))
-    parameters = {'COMPARE_OPTION': 2}
+    parameters = {'ret_tuple_as_trans_desc': True, 'COMPARE_OPTION': 2}
     for (o_info, tree, m_tree, log, alignment_t1, alignment_t2) in input_list:
-        print("compare row:", o_info[0])
         pt_number.apply(tree, 'D', 1)
         pt_number.apply(m_tree, 'D', 1)
         expand_repair_info = expand_repair_align_info(tree, m_tree, log, alignment_t1.aligns,
@@ -121,9 +121,9 @@ def compute_repair_result_option2(repair_file_result, mpt_index, align_mpt, resu
     excel_utils.save(base, result_file)
 
 
-def repair_align_info(tree, m_tree, log, alignments, best_worst_cost, cost_opt, option=None):
+def repair_align_info(tree, m_tree, log, alignments, best_worst_cost, cost_opt, parameters=None):
     start = time.time()
-    repair_alignments = align_repair.apply(tree, m_tree, log, alignments, option)
+    repair_alignments = align_repair.apply(tree, m_tree, log, alignments, parameters)
     end = time.time()
     cost_repair = sum([align['cost'] for align in repair_alignments])
     grade = 1 - (cost_repair - cost_opt) / (best_worst_cost - cost_opt) \
@@ -131,23 +131,25 @@ def repair_align_info(tree, m_tree, log, alignments, best_worst_cost, cost_opt, 
     return [str([[[r] for r in repair_alignments], end - start, cost_repair]), [end - start, cost_repair, grade]]
 
 
-def expand_repair_align_info(tree, m_tree, log, alignments, best_worst_cost, cost_opt, option=None):
+def expand_repair_align_info(tree, m_tree, log, alignments, best_worst_cost, cost_opt, parameters=None):
     start = time.time()
-    s_aligns = scope_expand.apply(alignments, tree, m_tree, option)
-    scope_repaired_alignments = align_repair.apply(tree, m_tree, log, s_aligns, option)
+    s_aligns = scope_expand.apply(alignments, tree, m_tree, parameters)
+    scope_repaired_alignments = align_repair.apply(tree, m_tree, log, s_aligns, parameters)
     end = time.time()
     cost_expand = sum([align['cost'] for align in scope_repaired_alignments])
     grade = 1 - (cost_expand - cost_opt) / (best_worst_cost - cost_opt) \
         if best_worst_cost != cost_opt else 1
-    return [str([[[r] for r in scope_repaired_alignments], end - start, cost_expand]), [end - start, cost_expand, grade]]
+    return [str([[[r] for r in scope_repaired_alignments], end - start, cost_expand]),
+            [end - start, cost_expand, grade]]
 
 
-def expand_gen_repair_align_info(tree, m_tree, log, alignments, best_worst_cost, cost_opt):
+def expand_gen_repair_align_info(tree, m_tree, log, alignments, best_worst_cost, cost_opt, parameters=None):
     start = time.time()
-    s_aligns = general_scope_expand.apply(alignments, tree, m_tree)
-    scope_repaired_alignments = align_repair.apply(tree, m_tree, log, s_aligns)
+    s_aligns = general_scope_expand.apply(alignments, tree, m_tree, parameters)
+    scope_repaired_alignments = align_repair.apply(tree, m_tree, log, s_aligns, parameters)
     end = time.time()
     cost_expand = sum([align['cost'] for align in scope_repaired_alignments])
     grade = 1 - (cost_expand - cost_opt) / (best_worst_cost - cost_opt) \
         if best_worst_cost != cost_opt else 1
-    return [str([[[r] for r in scope_repaired_alignments], end - start, cost_expand]), [end - start, cost_expand, grade]]
+    return [str([[[r] for r in scope_repaired_alignments], end - start, cost_expand]),
+            [end - start, cost_expand, grade]]

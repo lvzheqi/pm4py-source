@@ -22,7 +22,7 @@ def apply(tree, search='D', index=1):
     --------------
         Return the total number of nodes
     """
-    return __dfs_number(tree, index) if search == 'D' else __bfs_number(tree, index)
+    return __dfs_number(tree, index) if search.upper() == 'D' else __bfs_number(tree, index)
 
 
 def __dfs_number(tree, index):

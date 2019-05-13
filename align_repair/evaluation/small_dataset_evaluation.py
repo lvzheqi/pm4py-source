@@ -16,7 +16,7 @@ from align_repair.evaluation import create_event_log, print_short_alignment, \
 
 def compute_cost_and_time(tree, m_tree, log):
 
-    parameters = {'COMPARE_OPTION': 1}
+    parameters = {'ret_tuple_as_trans_desc': True, 'COMPARE_OPTION': 1}
 
     pt_number.apply(tree, 'D', 1)
     pt_number.apply(m_tree, 'D', 1)
@@ -79,7 +79,7 @@ def alignment_quality_log_based_on_tree1():
 def creat_non_fitting_based_on_tree1(file, name, node_num):
     num = ["node", "best_worst_cost", "optimal_cost", "optimal_time", "repaired_cost", "repaired_time",
            "scope_repair_cost", "scope_repair_time", "grade1", "grade2"]
-    tree_num, mutated_num, log_num, non_fit_pro = 25, 1, 1, 0.9
+    tree_num, mutated_num, log_num, non_fit_pro = 25, 1, 5, 0.9
     row_index = 0
     table = file.add_sheet(name)
     tree = [pt_create.apply(random.randint(node_num[0], node_num[1])) for _ in range(tree_num)]
@@ -130,9 +130,9 @@ def creat_non_fitting_based_on_tree2(file, name, node_num):
 
 
 def test_compute_cost_time():
-    tree1 = pt_utils.parse("*( a, ->( X( b, ->( c, d ) ), e, f ), τ )")
-    tree2 = pt_utils.parse("*( a, ->( *( b, ->( c, d ), τ ), e, f ), τ )")
-    log = create_event_log("eaefhah, abhfagbbebhehfhg, e, bchehfhah, fchbcfbeahbbfhb, ehah, gchdcfhah, fhbhfhae, fdheba, aee")
+    tree1 = pt_utils.parse("+( ->( b, +( ->( g, h ), f ), +( c, *( d, e, τ ) ) ), a )")
+    tree2 = pt_utils.parse("+( X( b, +( ->( g, h ), f ), +( c, *( d, e, τ ) ) ), a )")
+    log = create_event_log("haddf")
 
     result = compute_cost_and_time(tree1, tree2, log)
     print_tree_align_compare(result)
