@@ -30,19 +30,26 @@ def print_event_log(log):
     print()
 
 
-def is_silent_move(align):
-    align = align[1]
+def is_not_silent_move(align, ret_tuple_as_trans_desc):
+    if ret_tuple_as_trans_desc:
+        align = align[1]
     if align[0] == ali.utils.SKIP and (align[1] is None or align[1].endswith(pt_align_utils.LOCK_START)
                                        or align[1].endswith(pt_align_utils.LOCK_END)):
         return False
     return True
 
 
-def print_short_alignment(alignments, title="Align: "):
+def print_short_alignment(alignments, ret_tuple_as_trans_desc, title="Align: "):
     for align in alignments:
         if align.get("print") is None:
-            new_align = list(filter(is_silent_move, align['alignment']))
-            align["alignment"] = list(map(lambda a: a[1], new_align))
+            new_align = []
+            for a in align['alignment']:
+                if is_not_silent_move(a, ret_tuple_as_trans_desc):
+                    if ret_tuple_as_trans_desc:
+                        new_align.append(a[1])
+                    else:
+                        new_align.append(a)
+            align["alignment"] = new_align
             align["print"] = True
     for align in alignments:
         if align.get("print") is not None:
@@ -51,13 +58,13 @@ def print_short_alignment(alignments, title="Align: "):
 
 
 def alignment_on_pt(tree, log):
-    net, initial_marking, final_marking = pt_to_lock_net.apply(tree)
+    net, initial_marking, final_marking = pt_to_net.apply(tree)
     alignments = align_factory.apply_log(log, net, initial_marking, final_marking)
     return alignments
 
 
 def alignment_on_lock_pt(tree, log):
-    net, initial_marking, final_marking = pt_to_lock_net.apply(tree)
+    net, initial_marking, final_marking = pt_to_lock_net.apply(tree, {'PARAM_CHILD_LOCK': True})
     parameters = pt_align_utils.alignment_parameters(net)
     parameters['ret_tuple_as_trans_desc'] = True
     alignments = align_factory.apply_log(log, net, initial_marking, final_marking, parameters)

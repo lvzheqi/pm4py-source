@@ -116,7 +116,8 @@ def example_pt2pn_with_lock():
     """
     print_spilt_start("pt2pn-with-lock")
     tree = align_repair.process_tree.stochastic_generation.stochastic_pt_create.apply(20)
-    net, initial_marking, final_marking = align_repair.process_tree.conversion.to_petri_net_with_lock.apply(tree)
+    net, initial_marking, final_marking = align_repair.process_tree.conversion.to_petri_net_with_lock.apply(tree, {
+        'PARAM_CHILD_LOCK': True})
     gviz = pm4py.visualization.petrinet.factory.apply(net)
     pm4py.visualization.petrinet.factory.view(gviz)
 
@@ -145,7 +146,7 @@ def example_lock_alignment_parameters():
     """
     print_spilt_start("parameters-with-lock")
     tree = pm4py.objects.process_tree.pt_util.parse("X (a, b)")
-    net, _, _ = align_repair.process_tree.conversion.to_petri_net_with_lock.apply(tree)
+    net, _, _ = align_repair.process_tree.conversion.to_petri_net_with_lock.apply(tree, {'PARAM_CHILD_LOCK': True})
     parameters = align_repair.process_tree.alignments.utils.alignment_parameters(net)
     print("Parameters:", parameters)
     print_spilt_end()

@@ -142,10 +142,10 @@ def recompute_fitness(align, trace, best_worst_cost):
         align['fitness'] = 0
 
 
-def apply_pt_alignments(log, tree, ret_tuple_as_trans_desc):
-    net, initial_marking, final_marking = pt_to_lock_net.apply(tree)
+def apply_pt_alignments(log, tree, parameters):
+    net, initial_marking, final_marking = pt_to_lock_net.apply(tree, parameters)
     new_parameters = pt_align_utils.alignment_parameters(net)
-    new_parameters[PARAM_ALIGNMENT_RESULT_IS_SYNC_PROD_AWARE] = ret_tuple_as_trans_desc
+    new_parameters[PARAM_ALIGNMENT_RESULT_IS_SYNC_PROD_AWARE] = parameters[PARAM_ALIGNMENT_RESULT_IS_SYNC_PROD_AWARE]
     return align_factory.apply_log(log, net, initial_marking, final_marking, new_parameters)
 
 
@@ -182,16 +182,14 @@ def apply(tree1, tree2, log, alignments, parameters=None):
     else:
         tree1_total_number = pt_mani_utils.nodes_number(tree1)
         pt_number.apply(com_res.subtree2, 'D', tree1_total_number + 1)
-        best_worst_cost = apply_pt_alignments(EventLog([Trace()]), tree2, ret_tuple_as_trans_desc)[0]['cost']
+        best_worst_cost = apply_pt_alignments(EventLog([Trace()]), tree2, parameters)[0]['cost']
         for i in range(len(alignments)):
             align = alignments[i]
             if align.get("repair") is None:
                 scope = detect_change_scope(align['alignment'], com_res.subtree1, log[i], ret_tuple_as_trans_desc)
                 if not len(scope.traces) == 0:
-                    sub_aligns_before = apply_pt_alignments(EventLog(scope.traces), com_res.subtree1,
-                                                            ret_tuple_as_trans_desc)
-                    sub_aligns_after = apply_pt_alignments(EventLog(scope.traces), com_res.subtree2,
-                                                           ret_tuple_as_trans_desc)
+                    sub_aligns_before = apply_pt_alignments(EventLog(scope.traces), com_res.subtree1, parameters)
+                    sub_aligns_after = apply_pt_alignments(EventLog(scope.traces), com_res.subtree2, parameters)
                     alignment_reassemble(align['alignment'], sub_aligns_after, scope.anchor_index, com_res.subtree1,
                                          ret_tuple_as_trans_desc)
                     recompute_cost(align, sub_aligns_before, sub_aligns_after)
