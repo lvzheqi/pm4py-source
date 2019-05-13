@@ -1,18 +1,18 @@
 import os
-# total: (4*10)*2*10=800
+# total: (200*6)*2*3=1200*6 = 
 # range of tree node
 # PT_RANGE = [(11, 15), (16, 18), (19, 21), (22, 24), (25, 27), (28, 30), (31, 33), (34, 45)]
-PT_RANGE = [(11, 15), (16, 18), (19, 21), (22, 24)]
+PT_RANGE = [(11, 15), (16, 18), (19, 21), (22, 24), (25, 27), (28, 30)]
 # number of tree for each range
-PT_NUM = [10 for _ in range(len(PT_RANGE))]
+PT_NUM = [200 for _ in range(len(PT_RANGE))]
 
 # number of mutated tree for each process tree
 MPT_NUM = 2
 # enforce the node size of mutated tree
-MPT_LEVEL = [3]
+MPT_LEVEL = [3, 4, 5]
 
 # number of traces for each event log
-TRACE_NUM = 10
+TRACE_NUM = 1
 LOG_SHEET_NAME = ['log' + str(i) + "-" + str(j) for (i, j) in PT_RANGE]
 ALIGN_SHEET_NAME = ['align' + str(i) + "-" + str(j) for (i, j) in PT_RANGE]
 
