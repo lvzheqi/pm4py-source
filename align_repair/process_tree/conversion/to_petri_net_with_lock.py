@@ -65,6 +65,8 @@ def recursively_add_tree(tree, net, initial_entity_subtree, final_entity_subtree
     if ((param_child_lock or tree.operator is not None) and not param_loop_lock) or \
             (param_loop_lock and (tree.parent is not None and tree.parent.operator == Operator.LOOP
                                   or (tree.label is None and tree.operator is None))):
+    # if ((param_child_lock or tree.operator is not None) and not param_loop_lock) or \
+    #         (param_loop_lock and (tree.parent is not None and tree.parent.operator == Operator.LOOP)):
         intermediate_place_s = get_new_place(counts)
         net.places.add(intermediate_place_s)
         # petri_trans = get_new_hidden_trans(counts, type_trans=str(index)+"_start")
