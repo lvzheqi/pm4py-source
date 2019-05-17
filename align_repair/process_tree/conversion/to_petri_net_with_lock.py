@@ -43,8 +43,10 @@ def recursively_get_node_index(tree, index, node_end):
 def recursively_add_tree(tree, net, initial_entity_subtree, final_entity_subtree, counts, index, node_end,
                          parameters):
     parameters = {} if parameters is None else parameters
-    param_child_lock = True if parameters.get('PARAM_CHILD_LOCK') is None else parameters['PARAM_CHILD_LOCK']
+    param_child_lock = False if parameters.get('PARAM_CHILD_LOCK') is None else parameters['PARAM_CHILD_LOCK']
     param_loop_lock = False if parameters.get('PARAM_LOOP_LOCK') is None else parameters['PARAM_LOOP_LOCK']
+    param_lock = False or param_loop_lock or param_loop_lock \
+        if parameters.get('PARAM_LOCK') is None else parameters['PARAM_LOCK'] or param_loop_lock or param_loop_lock
 
     cur_pos = index
     if type(initial_entity_subtree) is PetriNet.Transition:
@@ -62,7 +64,7 @@ def recursively_add_tree(tree, net, initial_entity_subtree, final_entity_subtree
             petri.utils.add_arc_from_to(final_place, final_entity_subtree, net)
 
     intermediate_place_s, intermediate_place_e = initial_place, final_place
-    if ((param_child_lock or tree.operator is not None) and not param_loop_lock) or \
+    if param_lock and ((param_child_lock or tree.operator is not None) and not param_loop_lock) or \
             (param_loop_lock and (tree.parent is not None and tree.parent.operator == Operator.LOOP
                                   or (tree.label is None and tree.operator is None))):
         intermediate_place_s = get_new_place(counts)
@@ -120,7 +122,7 @@ def recursively_add_tree(tree, net, initial_entity_subtree, final_entity_subtree
 
         elif tree.operator == Operator.LOOP:
             if intermediate_place_s.name == SOURCE_NAME:
-                petri_trans = get_new_hidden_trans(counts, type_trans=str(cur_pos) + "_tau")
+                petri_trans = get_new_hidden_trans(counts, type_trans=str(cur_pos+1) + "_tau")
                 net.transitions.add(petri_trans)
                 petri.utils.add_arc_from_to(intermediate_place_s, petri_trans, net)
                 intermediate_place_s = get_new_place(counts)
@@ -132,15 +134,15 @@ def recursively_add_tree(tree, net, initial_entity_subtree, final_entity_subtree
             index = node_end[index + 1]
             recursively_add_tree(tree_childs[1], net, intermediate_place, intermediate_place_s, counts,
                                  index+1, node_end, parameters)
-            # if param_loop_lock:
-            #     loop_trans = get_new_hidden_trans(counts, type_trans=str(cur_pos) + "_tau")
-            #     net.transitions.add(loop_trans)
-            #     petri.utils.add_arc_from_to(intermediate_place, loop_trans, net)
-            #     petri.utils.add_arc_from_to(loop_trans, intermediate_place_e, net)
-            # else:
-            index = node_end[index + 1]
-            recursively_add_tree(tree_childs[2], net, intermediate_place, intermediate_place_e, counts,
-                                 index + 1, node_end, parameters)
+            if param_lock:
+                loop_trans = get_new_hidden_trans(counts, type_trans=str(cur_pos) + "_tau")
+                net.transitions.add(loop_trans)
+                petri.utils.add_arc_from_to(intermediate_place, loop_trans, net)
+                petri.utils.add_arc_from_to(loop_trans, intermediate_place_e, net)
+            else:
+                index = node_end[index + 1]
+                recursively_add_tree(tree_childs[2], net, intermediate_place, intermediate_place_e, counts,
+                                     index + 1, node_end, parameters)
 
     elif tree.operator is None:
         if tree.label is None:

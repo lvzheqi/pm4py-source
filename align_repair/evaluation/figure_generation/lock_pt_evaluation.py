@@ -8,7 +8,7 @@ import random
 from align_repair.process_tree.stochastic_generation import stochastic_pt_create as pt_create
 from align_repair.process_tree.stochastic_generation import non_fitting_log_create as log_create
 
-from align_repair.evaluation import alignment_on_lock_pt, alignment_on_pt
+from align_repair.evaluation import alignment_on_lock_pt, alignment_on_pt, alignment_on_loop_lock_pt
 
 
 def avg_runtime_without_lock(trees, logs):
@@ -23,7 +23,7 @@ def avg_runtime_without_lock(trees, logs):
 def avg_runtime_with_lock(trees, logs):
     start = time.time()
     for i, tree in enumerate(trees):
-        alignment_on_lock_pt(tree, logs[i])
+        alignment_on_loop_lock_pt(tree, logs[i])
     end = time.time()
     print((end - start) / len(trees))
     return (end - start) / len(trees)
@@ -35,8 +35,8 @@ def plot_histogram_lock_runtime(list1, list2):
     """
     import matplotlib.pyplot as plt
 
-    label_list = ["10-15", "16-20", "21-25", "26-30"]
-    # label_list = ["10-15", "16-20", "21-25", "26-30", "31-33", "34-35"]
+    # label_list = ["10-15", "16-20", "21-25", "26-30"]
+    label_list = ["10-15", "16-20", "21-25", "26-30", "31-33", "34-35"]
     x = range(len(list1))
     plt.bar(x=x, height=list1, width=0.4, alpha=0.8, color="red", label="without Lock")
     plt.bar(x=[i + 0.4 for i in x], height=list2, width=0.4, color="green", label="with Lock")
@@ -55,7 +55,7 @@ def plot_histogram_lock_runtime(list1, list2):
 
 
 def compute_run_time():
-    no_tree, no_event, pro = 1, 1, 0.8
+    no_tree, no_event, pro = 20, 10, 0.8
     tree1 = [pt_create.apply(random.randint(11, 15)) for _ in range(no_tree)]
     log1 = [log_create.apply(tree, no_event, pro) for tree in tree1]
     tree2 = [pt_create.apply(random.randint(16, 20)) for _ in range(no_tree)]

@@ -16,6 +16,9 @@ class CompareResult(object):
     def _get_subtree2(self):
         return self._subtree2
 
+    def _set_subtree2(self, subtree2):
+        self._subtree2 = subtree2
+
     def __repr__(self):
         output = "Two trees are same!" if self._value else "Two trees are different! \n"
         output = output + "\t Subtree1:" + str(self._subtree1) + "\n" if not self._value else output
@@ -24,7 +27,7 @@ class CompareResult(object):
 
     value = property(_get_value)
     subtree1 = property(_get_subtree1)
-    subtree2 = property(_get_subtree2)
+    subtree2 = property(_get_subtree2, _set_subtree2)
 
 
 def iterative_compare(tree1, tree2):
