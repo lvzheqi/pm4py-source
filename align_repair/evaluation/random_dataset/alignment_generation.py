@@ -6,7 +6,8 @@ from align_repair.process_tree.manipulation import pt_number
 from align_repair.repair import scope_expand, align_repair, general_scope_expand
 from align_repair.evaluation.execl_operation import utils as excel_utils, object_read
 from align_repair.evaluation.execl_operation.excel_table import ExcelTable
-from align_repair.evaluation import alignment_on_lock_pt, alignment_on_pt, get_best_cost_on_pt
+from align_repair.evaluation import alignment_on_lock_pt, alignment_on_pt, get_best_cost_on_pt, \
+    alignment_on_loop_lock_pt
 from align_repair.evaluation.config import PT_FILE_NAME, LOG_FILE_NAME, ALIGN_FILE_NAME, ALIGN_SHEET_NAME, \
     PT_NUM, REPAIR_SHEET_NAME, MPT_NUM
 
@@ -34,18 +35,22 @@ def compute_alignment(sheet_index, file):
         else:
             if row % (PT_NUM[0] * MPT_NUM) == 0:
                 align_e_table = ExcelTable(base.add_sheet(ALIGN_SHEET_NAME[row // (PT_NUM[0] * MPT_NUM)]))
-        excel_utils.write_column_to_table(align_e_table.table, align_e_table.column, align_info(tree, log))
+        parameters = None
+        excel_utils.write_column_to_table(align_e_table.table, align_e_table.column, align_info(tree, log, parameters))
     excel_utils.save(base, file)
 
 
-def align_info(tree, log):
+def align_info(tree, log, parameters):
     start = time.time()
     alignment_on_pt(tree, log)
     end = time.time()
     optimal_time = end - start
 
     start = time.time()
-    alignments_lock = alignment_on_lock_pt(tree, log)
+    if parameters['ret_tuple_as_trans_desc']:
+        alignments_lock = alignment_on_lock_pt(tree, log)
+    else:
+        alignments_lock = alignment_on_loop_lock_pt(tree, log)
     end = time.time()
     align_list = list(map(str, alignments_lock))
     optimal_time_lock = end - start
@@ -116,7 +121,7 @@ def compute_repair_result_option2(repair_file_result, mpt_index, align_mpt, resu
         pt_number.apply(m_tree, 'D', 1)
         expand_repair_info = expand_repair_align_info(tree, m_tree, log, alignment_t1.aligns,
                                                       alignment_t2.best_worst_cost, alignment_t2.cost_opt, parameters)
-        excel_utils.write_row_to_table(expand_e_table.table, expand_e_table.column, o_info + expand_repair_info[1])
+        excel_utils.write_column_to_table(expand_e_table.table, expand_e_table.column, o_info + expand_repair_info[1])
 
     excel_utils.save(base, result_file)
 

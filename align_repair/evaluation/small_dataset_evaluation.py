@@ -28,8 +28,8 @@ def compute_cost_and_time(tree, m_tree, log, parameters):
     end = time.time()
     ori_time = end - start
 
-    import copy
-    print_short_alignment(copy.deepcopy(alignments), ret_tuple_as_trans_desc)
+    # import copy
+    # print_short_alignment(copy.deepcopy(alignments), ret_tuple_as_trans_desc)
     start = time.time()
     optimal_alignments = alignment_on_loop_lock_pt(m_tree, log)
     end = time.time()
@@ -145,12 +145,15 @@ def creat_non_fitting_based_on_tree2(file, name, node_num, parameters):
 
 
 def test_compute_cost_time(parameters):
-    tree1 = pt_utils.parse("+( ->( b, +( ->( g, h ), f ), +( c, *( d, e, τ ) ) ), a )")
+    tree1 = pt_utils.parse("*( d, τ, τ )")
     tree2 = pt_utils.parse("+( X( b, +( ->( g, h ), f ), +( c, *( d, e, τ ) ) ), a )")
-    log = create_event_log("haddf")
-
-    result = compute_cost_and_time(tree1, tree2, log, parameters)
-    print_tree_align_compare(result)
+    log = create_event_log("dd")
+    start = time.time()
+    alignments = alignment_on_pt(tree1, log)
+    end = time.time()
+    print(end - start, alignments)
+    # result = compute_cost_and_time(tree1, tree2, log, parameters)
+    # print_tree_align_compare(result)
 
 
 def print_tree_align_compare(result):
@@ -175,7 +178,7 @@ def print_intermediate_result(tree, m_tree, log, alignments, optimal_alignments,
 
 if __name__ == "__main__":
     param = {'ret_tuple_as_trans_desc': True, 'COMPARE_OPTION': 1}
-    # test_compute_cost_time(param)
-    alignment_quality_log_based_on_tree1()
+    test_compute_cost_time(param)
+    # alignment_quality_log_based_on_tree1()
     # param = {'ret_tuple_as_trans_desc': False, 'COMPARE_OPTION': 1}
     # alignment_quality_log_based_on_tree1(param)
