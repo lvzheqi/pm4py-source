@@ -6,7 +6,7 @@ from pm4py.objects.process_tree import util as pt_utils
 
 from align_repair.process_tree.alignments import utils as pt_align_utils
 from align_repair.process_tree.manipulation import pt_number, pt_compare
-from align_repair.evaluation import create_event_log, alignment_on_pt, print_short_alignment
+from align_repair.evaluation import create_event_log, alignment_on_pt, alignment_on_loop_lock_pt, alignment_default_on_pt
 from align_repair.process_tree.alignments.align_repair_opt import align_repair, apply_pt_alignments
 
 
@@ -144,35 +144,46 @@ def compute_ranges_for_loop(align, tree_info, mapping_t, node_index, ranges):
         nei_ranges = RangeInterval(tree_info[node_index].tree_range.upper_bound + 1, ub)
     else:
         lb = tree_info[parent_node_index].tree_range.lower_bound
-        nei_ranges = RangeInterval(lb, tree_info[node_index].tree_range.lower_bound)
+        nei_ranges = RangeInterval(lb, tree_info[node_index].tree_range.lower_bound - 1)
 
     new_ranges = list()
     for range_interval in ranges:
         ri = compute_one_range_for_sequence(align, tree_info, mapping_t, node_index, range_interval,
                                             nei_ranges, nei_ranges)
-        left_bound = cur_pos = ri.lower_bound
-        scatter_align = False
-        while cur_pos <= ri.upper_bound:
-            move = align[cur_pos]
-            if not pt_align_utils.is_log_move(move, True):
-                move_cur_index = pt_align_utils.move_index(move, mapping_t, True)
-                move_in_nei = nei_ranges.is_in_range(move_cur_index)
-                scatter_align = True if move_in_nei else scatter_align
-                if scatter_align and pt_align_utils.move_in_subtree(move, tree_info[node_index].tree_range, mapping_t):
-                    new_ranges.append(compute_one_range_for_sequence(align, tree_info, mapping_t, node_index,
-                                                                     RangeInterval(left_bound, cur_pos - 1),
-                                                                     nei_ranges, nei_ranges))
-                    left_bound = cur_pos
-                    scatter_align = False
-            else:
+        if ri is not None:
+            left_bound = cur_pos = ri.lower_bound
+            scatter_align = False
+            while cur_pos <= ri.upper_bound:
+                move = align[cur_pos]
                 move_in_nei = True
-            if (pt_align_utils.is_sync_move(move, True) and move_in_nei) or cur_pos == ri.upper_bound:
-                new_ranges.append(compute_one_range_for_sequence(align, tree_info, mapping_t, node_index,
-                                                                 RangeInterval(left_bound, cur_pos),
-                                                                 nei_ranges, nei_ranges))
-                left_bound = cur_pos + 1
-                scatter_align = False
-            cur_pos += 1
+                if not pt_align_utils.is_log_move(move, True):
+                    move_cur_index = pt_align_utils.move_index(move, mapping_t, True)
+                    move_in_nei = nei_ranges.is_in_range(move_cur_index)
+                    scatter_align = True if move_in_nei else scatter_align
+                    if scatter_align and pt_align_utils.move_in_subtree(move, tree_info[node_index].tree_range,
+                                                                        mapping_t):
+                        new_ranges.append(compute_one_range_for_sequence(align, tree_info, mapping_t, node_index,
+                                                                         RangeInterval(left_bound, cur_pos - 1),
+                                                                         nei_ranges, nei_ranges))
+                        ri = compute_one_range_for_sequence(align, tree_info, mapping_t, node_index,
+                                                            RangeInterval(cur_pos, ri.upper_bound),
+                                                            nei_ranges, nei_ranges)
+                        if ri is None:
+                            break
+                        left_bound = cur_pos = ri.lower_bound
+                        scatter_align = False
+                if (pt_align_utils.is_sync_move(move, True) and move_in_nei) or cur_pos == ri.upper_bound:
+                    new_ranges.append(compute_one_range_for_sequence(align, tree_info, mapping_t, node_index,
+                                                                     RangeInterval(left_bound, cur_pos),
+                                                                     nei_ranges, nei_ranges))
+                    ri = compute_one_range_for_sequence(align, tree_info, mapping_t, node_index,
+                                                        RangeInterval(cur_pos + 1, ri.upper_bound),
+                                                        nei_ranges, nei_ranges)
+                    if ri is None:
+                        break
+                    left_bound = cur_pos = ri.lower_bound
+                    scatter_align = False
+                cur_pos += 1
     return new_ranges
 
 
@@ -219,7 +230,6 @@ def compute_repairing_alignments(com_res, log, alignments, tree_info, mapping_t,
                 elif node.parent.operator == Operator.XOR:
                     ranges = compute_ranges_for_xor(align, tree_info, mapping_t, node.index, ranges)
 
-            print(ranges)
             if len(ranges) != 0:
                 align_repair(alignment, log, ranges, mapping_t, com_res, tree_info[com_res.subtree1.index].tree_range,
                              parameters, best_worst_cost)
@@ -233,25 +243,35 @@ def apply(tree, m_tree, log, parameters=None):
     pt_number.apply(tree, 'D')
     pt_number.apply(m_tree, 'D')
     alignments = alignment_on_pt(tree, log)
-    com_res = pt_compare.apply(tree, m_tree)
+    com_res = pt_compare.apply(tree, m_tree, 1)
     if com_res.value:
         return alignments, copy.deepcopy(alignments)
     else:
         mapping_t, tree_info = dict(), dict()
-        recursively_init_tree_tables(tree1, tree_info, mapping_t, [1])
-        best_worst_cost = apply_pt_alignments(EventLog([Trace()]), tree2, parameters)[0]['cost']
+        recursively_init_tree_tables(tree, tree_info, mapping_t, [1])
+        best_worst_cost = apply_pt_alignments(EventLog([Trace()]), m_tree, parameters)[0]['cost']
         repairing_alignment = compute_repairing_alignments(com_res, log, alignments, tree_info, mapping_t,
                                                            parameters, best_worst_cost)
-        print(alignments)
-        print(list(map(lambda a: a[1], alignments[0]['alignment'])))
-        print(list(map(lambda a: a[1], repairing_alignment[0]['alignment'])))
-        print(repairing_alignment[0]['cost'])
+
+        # opt_align = alignment_on_pt(m_tree, log)
+        # print(list(map(lambda a: a[1], opt_align[0]['alignment'])))
+        # print('opt_cost:', opt_align[0]['cost'])
+        # print(list(map(lambda a: a[1], repairing_alignment[0]['alignment'])))
+        # print('rep_cost:', repairing_alignment[0]['cost'])
         return alignments, repairing_alignment
 
 
 if __name__ == "__main__":
-    tree1 = pt_utils.parse("X( a, ->(b, c)) ")
-    tree2 = pt_utils.parse("X( a, +(b, c))")
-    logs = create_event_log("ab")
+    tree1 = pt_utils.parse("X( +( j, k, a ), *( X( b, +( h, i ) ), *( X( c, d ), ->( +( f, g ), e ), τ ), τ ) )")
+    tree2 = pt_utils.parse("X( +( j, k, a ), *( X( b, +( h, i ) ), *( X( c, d ), ->( *( f, g, τ ), e ), τ ), τ ) )")
+    logs = create_event_log("bn, mj, bcni, hncmf, h, ffjn, i, kj, fkn, lchbdf")
 
-    apply(tree1, tree2, logs)
+    alignments = alignment_default_on_pt(tree2, logs)
+    optimal_cost = sum([align['cost'] for align in alignments])
+    # print(list(map(lambda a: a[1], alignments[0]['alignment'])))
+    print('optimal cost', optimal_cost)
+    alignments = alignment_on_loop_lock_pt(tree2, logs)
+    # print(list(map(lambda a: a[1], alignments[0]['alignment'])))
+    print('optimal cost', optimal_cost)
+    print(alignments)
+    # apply(tree1, tree2, logs)

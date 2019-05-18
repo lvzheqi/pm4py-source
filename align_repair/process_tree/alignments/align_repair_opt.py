@@ -54,14 +54,14 @@ def alignment_reassemble(alignment, sub_aligns, ranges, subtree_range, mapping_t
                         new_align.append(sub_align[sub_pos])
                         sub_pos += 1
                     else:
-                        cost -= STD_MODEL_MOD_MOVE_COST if not pt_align_utils.is_none_move(move, True) else cost
+                        cost = cost - STD_MODEL_MOD_MOVE_COST if not pt_align_utils.is_none_move(move, True) else cost
             pos += 1
         if sub_pos != len(sub_align) - 1:
             new_align += sub_align[sub_pos:]
-        alignment['cost'] = cost + sub_aligns[i]['cost']
-
+        cost += sub_aligns[i]['cost']
     new_align += align[pos:]
     alignment['alignment'] = new_align
+    alignment['cost'] = cost
 
 
 def recompute_fitness(align, trace, best_worst_cost):
