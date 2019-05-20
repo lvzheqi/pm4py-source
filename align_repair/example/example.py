@@ -6,7 +6,8 @@ input variable, output result.
 import pm4py
 import align_repair
 
-from align_repair.evaluation import print_event_log, create_event_log, alignment_on_lock_pt, alignment_on_loop_lock_pt
+from align_repair.evaluation import print_event_log, create_event_log, alignment_on_lock_pt, \
+    alignment_on_loop_lock_pt
 
 
 def example_create_random_tree():
@@ -114,9 +115,15 @@ def example_pt2pn_with_lock():
     Output:
         net, initial_marking, final_marking
     """
+    print_spilt_start("pt2pn-without-lock")
+    tree = pm4py.objects.process_tree.pt_util.parse("* (a, b, τ)")
+    net, _, _ = align_repair.process_tree.conversion.to_petri_net_with_lock.apply(tree, )
+    gviz = pm4py.visualization.petrinet.factory.apply(net)
+    pm4py.visualization.petrinet.factory.view(gviz)
+
     print_spilt_start("pt2pn-with-lock")
-    tree = align_repair.process_tree.stochastic_generation.stochastic_pt_create.apply(20)
-    net, initial_marking, final_marking = align_repair.process_tree.conversion.to_petri_net_with_lock.apply(tree, {
+    tree = pm4py.objects.process_tree.pt_util.parse("* (a, b, τ)")
+    net, _, _ = align_repair.process_tree.conversion.to_petri_net_with_lock.apply(tree, {
         'PARAM_CHILD_LOCK': True})
     gviz = pm4py.visualization.petrinet.factory.apply(net)
     pm4py.visualization.petrinet.factory.view(gviz)
@@ -191,7 +198,7 @@ def example_repair_alignment():
     log = create_event_log("agh")
     alignment_on_tree1 = alignment_on_lock_pt(tree1, log)
 
-    repaired_alignment = align_repair.repair.align_repair. \
+    repaired_alignment = align_repair.repair.lock_pt.align_repair. \
         apply(tree1, tree2, log, alignment_on_tree1, {'ret_tuple_as_trans_desc': True})
 
     print("Tree1:", tree1)
@@ -220,8 +227,8 @@ def example_scope_expand():
     log = align_repair.process_tree.stochastic_generation.non_fitting_log_create.apply(tree2, 1, 0.8)
     align_repair.process_tree.manipulation.pt_number.apply(tree1, 'D', 1)
     alignment_on_tree1 = alignment_on_lock_pt(tree1, log)
-    expand_alignment = align_repair.repair.scope_expand.apply(alignment_on_tree1, tree1, tree2,
-                                                              {'ret_tuple_as_trans_desc': True})
+    expand_alignment = align_repair.repair.lock_pt.scope_expand.apply(alignment_on_tree1, tree1, tree2,
+                                                                      {'ret_tuple_as_trans_desc': True})
 
     print("Tree1:", tree1)
     print("Tree2:", tree2)
@@ -249,13 +256,13 @@ def example_general():
     log = align_repair.process_tree.stochastic_generation.non_fitting_log_create.apply(tree2, 1, 0.8)
     align_repair.process_tree.manipulation.pt_number.apply(tree1, 'D', 1)
     alignment_on_tree1 = alignment_on_lock_pt(tree1, log)
-    optimal_alignment_on_tree2 = align_repair.repair.scope_expand.apply(alignment_on_tree1, tree1, tree2,
-                                                                        {'ret_tuple_as_trans_desc': True})
-    direct_repaired_alignment = align_repair.repair.align_repair. \
+    optimal_alignment_on_tree2 = align_repair.repair.lock_pt.scope_expand.apply(alignment_on_tree1, tree1, tree2,
+                                                                                {'ret_tuple_as_trans_desc': True})
+    direct_repaired_alignment = align_repair.repair.lock_pt.align_repair. \
         apply(tree1, tree2, log, alignment_on_tree1, {'ret_tuple_as_trans_desc': True})
-    expand_alignment = align_repair.repair.scope_expand.apply(alignment_on_tree1, tree1, tree2,
-                                                              {'ret_tuple_as_trans_desc': True})
-    scoped_repaired_alignment = align_repair.repair.align_repair. \
+    expand_alignment = align_repair.repair.lock_pt.scope_expand.apply(alignment_on_tree1, tree1, tree2,
+                                                                      {'ret_tuple_as_trans_desc': True})
+    scoped_repaired_alignment = align_repair.repair.lock_pt.align_repair. \
         apply(tree1, tree2, log, expand_alignment, {'ret_tuple_as_trans_desc': True})
 
     print("Tree1:", tree1)
@@ -267,6 +274,34 @@ def example_general():
     print("Directly Repaired alignment on Tree2:\n\t", direct_repaired_alignment)
     print("Expanding Repaired alignment on Tree2:\n\t", scoped_repaired_alignment)
 
+    print_spilt_end()
+
+
+def example_optimal_repair_alignment():
+    """
+    Repair Alignment
+
+    Input:
+        Two Numbered Process Tree
+        Event Log
+        Alignment on One Process Tree
+    Output:
+        Repaired Alignment On Tree2
+    """
+    print_spilt_start("optimal-alignment-repair")
+    tree1 = pm4py.objects.process_tree.pt_util.parse("+( a, X( g, h ) ) ")
+    tree2 = pm4py.objects.process_tree.pt_util.parse("+( a, ->( g, h ) )")
+    log = create_event_log("agh")
+
+    alignments, repair_alignments = align_repair.repair.optimal.align_repair_opt.apply(tree1, tree2, log, {
+        'ret_tuple_as_trans_desc': True})
+
+    print("Tree1:", tree1)
+    print("Tree2:", tree2)
+    print("Event Log:", end=" ")
+    print_event_log(log)
+    print("Alignment on Tree1:\n\t", alignments)
+    print("Repaired Alignment on Tree2:\n\t", repair_alignments)
     print_spilt_end()
 
 
@@ -290,11 +325,4 @@ if __name__ == "__main__":
     example_repair_alignment()
     example_scope_expand()
     example_general()
-# tree = pt_utils.parse("+( ->( + (a, b), X(c, d)), e")
-#         log = create_event_log("afedg")
-#         net, initial_marking, final_marking = pt_to_lock_net.apply(tree, {'PARAM_LOOP_LOCK': True})
-#         parameters = pt_align_utils.alignment_parameters(net)
-#         parameters['ret_tuple_as_trans_desc'] = False
-#         alignments = align_factory.apply_log(log, net, initial_marking, final_marking, parameters)
-#         print(alignments)
-#         to_lock_align.compute_lock_range(tree, alignments)
+    example_optimal_repair_alignment()

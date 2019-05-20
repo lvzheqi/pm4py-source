@@ -50,11 +50,6 @@ def init_tree_tables(tree, index_t, mapping_t, label_t):
             q.append(node.children[i])
 
 
-def remove_skip_move():
-    # TODO: if need
-    pass
-
-
 def init_align_inverse_table(alignment, loop_ts, inverse_ts, mapping_t, label_t):
     for align in alignment:
         loop_t, inverse_t = dict(), dict()
@@ -136,4 +131,3 @@ def apply(tree, alignments):
     locks = list()
     compute_lock_range(tree, alignments, locks)
     insert_lock_to_alignment(alignments, locks)
-

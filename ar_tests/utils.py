@@ -21,6 +21,7 @@ def alignment_on_lock_pt(tree, log):
     net, initial_marking, final_marking = pt_to_lock_net.apply(tree, {'PARAM_CHILD_LOCK': True})
     parameters = pt_align_utils.alignment_parameters(net)
     parameters['ret_tuple_as_trans_desc'] = True
+    parameters['PARAM_CHILD_LOCK'] = True
     alignments = align_factory.apply_log(log, net, initial_marking, final_marking, parameters)
     return alignments
 

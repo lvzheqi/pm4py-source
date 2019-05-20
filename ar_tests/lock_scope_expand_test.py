@@ -3,7 +3,7 @@ import random
 
 from pm4py.objects.process_tree import util as pt_utils
 
-from align_repair.repair import scope_expand, general_scope_expand, align_repair
+from align_repair.repair.lock_pt import align_repair, general_scope_expand, scope_expand
 from align_repair.process_tree.manipulation import pt_number
 from align_repair.process_tree.stochastic_generation import stochastic_pt_create as pt_create
 from align_repair.process_tree.stochastic_generation import non_fitting_log_create as log_create
@@ -13,11 +13,11 @@ from align_repair.process_tree.alignments import to_lock_align
 from ar_tests import utils
 
 
-class ScopeExpandTest(unittest.TestCase):
+class LockScopeExpandTest(unittest.TestCase):
 
     def setUp(self):
-        self.parameters = {'ret_tuple_as_trans_desc': True}
-        self.parameters_tuple_false = {'ret_tuple_as_trans_desc': False}
+        self.parameters = {'ret_tuple_as_trans_desc': True, 'PARAM_CHILD_LOCK': True}
+        self.parameters_tuple_false = {'ret_tuple_as_trans_desc': False, 'PARAM_LOOP_LOCK': True}
 
     def test_scope_expand1(self):
         tree1 = pt_utils.parse("->( a, *( X(c, b), d, τ), e)")
@@ -230,8 +230,8 @@ class ScopeExpandTest(unittest.TestCase):
             align = utils.alignment_on_lock_pt(tree1, log)
             s_align = scope_expand.apply(align, tree1, tree2, self.parameters)
             g_s_align = general_scope_expand.apply(align, tree1, tree2, self.parameters)
-            ar1 = align_repair.apply(tree1, tree2, log, s_align)
-            ar2 = align_repair.apply(tree1, tree2, log, g_s_align)
+            ar1 = align_repair.apply(tree1, tree2, log, s_align, self.parameters)
+            ar2 = align_repair.apply(tree1, tree2, log, g_s_align, self.parameters)
             self.assertEqual(ar1[0]['cost'], ar2[0]['cost'])
 
     def test_scope_expand_tuple_false1(self):
