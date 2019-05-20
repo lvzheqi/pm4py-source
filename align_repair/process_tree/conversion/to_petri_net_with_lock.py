@@ -45,8 +45,8 @@ def recursively_add_tree(tree, net, initial_entity_subtree, final_entity_subtree
     parameters = {} if parameters is None else parameters
     param_child_lock = False if parameters.get('PARAM_CHILD_LOCK') is None else parameters['PARAM_CHILD_LOCK']
     param_loop_lock = False if parameters.get('PARAM_LOOP_LOCK') is None else parameters['PARAM_LOOP_LOCK']
-    param_lock = False or param_loop_lock or param_loop_lock \
-        if parameters.get('PARAM_LOCK') is None else parameters['PARAM_LOCK'] or param_loop_lock or param_loop_lock
+    param_lock = False or param_child_lock or param_loop_lock \
+        if parameters.get('PARAM_LOCK') is None else parameters['PARAM_LOCK'] or param_child_lock or param_loop_lock
 
     cur_pos = index
     if type(initial_entity_subtree) is PetriNet.Transition:
@@ -121,8 +121,8 @@ def recursively_add_tree(tree, net, initial_entity_subtree, final_entity_subtree
                 index = node_end[index + 1]
 
         elif tree.operator == Operator.LOOP:
-            if intermediate_place_s.name == SOURCE_NAME:
-                petri_trans = get_new_hidden_trans(counts, type_trans=str(cur_pos+1) + "_tau")
+            if not param_child_lock:
+                petri_trans = get_new_hidden_trans(counts, type_trans=str(cur_pos) + "_tau")
                 net.transitions.add(petri_trans)
                 petri.utils.add_arc_from_to(intermediate_place_s, petri_trans, net)
                 intermediate_place_s = get_new_place(counts)
@@ -134,7 +134,7 @@ def recursively_add_tree(tree, net, initial_entity_subtree, final_entity_subtree
             index = node_end[index + 1]
             recursively_add_tree(tree_childs[1], net, intermediate_place, intermediate_place_s, counts,
                                  index+1, node_end, parameters)
-            if param_lock:
+            if not param_lock:
                 loop_trans = get_new_hidden_trans(counts, type_trans=str(cur_pos) + "_tau")
                 net.transitions.add(loop_trans)
                 petri.utils.add_arc_from_to(intermediate_place, loop_trans, net)

@@ -1,71 +1,72 @@
-import copy
-
-from pm4py.objects.log.log import Trace, EventLog
 from pm4py.objects.process_tree.pt_operator import Operator
-from pm4py.objects.process_tree import util as pt_utils
 
 from align_repair.process_tree.alignments import utils as pt_align_utils
-from align_repair.process_tree.manipulation import pt_number, pt_compare
-from align_repair.evaluation import create_event_log, alignment_on_pt, alignment_on_loop_lock_pt, alignment_default_on_pt
-from align_repair.process_tree.alignments.align_repair_opt import align_repair, apply_pt_alignments
 
 
 class RangeInterval(object):
     def __init__(self, lower_bound, upper_bound):
-        self.lower_bound = lower_bound
-        self.upper_bound = upper_bound
+        self._lower_bound = lower_bound
+        self._upper_bound = upper_bound
 
     def is_in_range(self, number):
-        return True if self.lower_bound <= number <= self.upper_bound else False
+        return True if self._lower_bound <= number <= self._upper_bound else False
 
     def __repr__(self):
-        return '[' + str(self.lower_bound) + ', ' + str(self.upper_bound) + ']'
+        return '[' + str(self._lower_bound) + ', ' + str(self._upper_bound) + ']'
+
+    def _set_lower_bound(self, lower_bound):
+        self._lower_bound = lower_bound
+
+    def _set_upper_bound(self, upper_bound):
+        self._upper_bound = upper_bound
+
+    def _get_lower_bound(self):
+        return self._lower_bound
+
+    def _get_upper_bound(self):
+        return self._upper_bound
+
+    lower_bound = property(_get_lower_bound, _set_lower_bound)
+    upper_bound = property(_get_upper_bound, _set_upper_bound)
 
 
 class TreeInfo(object):
     def __init__(self, tree, paths, tree_range):
-        self.tree = tree
-        self.paths = paths
-        self.tree_range = tree_range
+        self._tree = tree
+        self._paths = paths
+        self._tree_range = tree_range
 
     def __repr__(self):
-        return str(self.tree) + ', ' + str(self.paths) + ', ' + str(self.tree_range) + '\n'
+        return str(self._tree) + ', ' + str(self._paths) + ', ' + str(self._tree_range) + '\n'
 
+    def _set_tree(self, tree):
+        self._tree = tree
 
-def init_index_table(node, index_t):
-    index_t[node.index] = node
+    def _set_paths(self, paths):
+        self._paths = paths
 
+    def _set_tree_range(self, tree_range):
+        self._tree_range = tree_range
 
-def init_mapping_table(node, mapping_t):
-    if node.label is not None:
-        mapping_t[node.label] = node.index
+    def _get_tree(self):
+        return self._tree
 
+    def _get_paths(self):
+        return self._paths
 
-def init_label_table(node, label_t):
-    label_t[node.index] = [node.index]
-    parent = node.parent
-    while parent is not None:
-        label_t[node.index] += [parent.index]
-        parent = parent.parent
+    def _get_tree_range(self):
+        return self._tree_range
 
-
-def init_tree_tables(tree):
-    mapping_t, label_t = dict(), dict()
-    q = [tree]
-    while len(q) != 0:
-        node = q.pop(0)
-
-        init_mapping_table(node, mapping_t)
-        init_label_table(node, label_t)
-
-        for i in range(len(node.children)):
-            q.append(node.children[i])
-    return mapping_t, label_t
+    tree = property(_get_tree, _set_tree)
+    paths = property(_get_paths, _set_paths)
+    tree_range = property(_get_tree_range, _set_tree_range)
 
 
 def recursively_init_tree_tables(tree, tree_info, mapping_t, paths):
     max_index = 0
-    init_mapping_table(tree, mapping_t)
+
+    if tree.label is not None:
+        mapping_t[tree.label] = tree.index
 
     if tree.operator is None:
         max_index = tree.index
@@ -213,65 +214,16 @@ def compute_ranges_for_sequence(align, tree_info, mapping_t, node_index, ranges)
     return new_ranges
 
 
-def compute_repairing_alignments(com_res, log, alignments, tree_info, mapping_t, parameters, best_worst_cost):
-    alignments = copy.deepcopy(alignments)
-    for i, alignment in enumerate(alignments):
-        align = alignment['alignment']
-        if alignment.get("repair") is None:
-            ranges = list()
-            for node_index in tree_info[com_res.subtree1.index].paths:
-                node = tree_info[node_index].tree
-                if node_index == 1:
-                    ranges = [RangeInterval(0, len(align) - 1)]
-                elif node.parent.operator == Operator.LOOP:
-                    ranges = compute_ranges_for_loop(align, tree_info, mapping_t, node.index, ranges)
-                elif node.parent.operator == Operator.SEQUENCE:
-                    ranges = compute_ranges_for_sequence(align, tree_info, mapping_t, node.index, ranges)
-                elif node.parent.operator == Operator.XOR:
-                    ranges = compute_ranges_for_xor(align, tree_info, mapping_t, node.index, ranges)
-
-            if len(ranges) != 0:
-                align_repair(alignment, log, ranges, mapping_t, com_res, tree_info[com_res.subtree1.index].tree_range,
-                             parameters, best_worst_cost)
-            alignment["repair"] = True
-    for a in alignments:
-        a.pop("repair") if a.get("repair") is not None else None
-    return alignments
-
-
-def apply(tree, m_tree, log, parameters=None):
-    pt_number.apply(tree, 'D')
-    pt_number.apply(m_tree, 'D')
-    alignments = alignment_on_pt(tree, log)
-    com_res = pt_compare.apply(tree, m_tree, 1)
-    if com_res.value:
-        return alignments, copy.deepcopy(alignments)
-    else:
-        mapping_t, tree_info = dict(), dict()
-        recursively_init_tree_tables(tree, tree_info, mapping_t, [1])
-        best_worst_cost = apply_pt_alignments(EventLog([Trace()]), m_tree, parameters)[0]['cost']
-        repairing_alignment = compute_repairing_alignments(com_res, log, alignments, tree_info, mapping_t,
-                                                           parameters, best_worst_cost)
-
-        # opt_align = alignment_on_pt(m_tree, log)
-        # print(list(map(lambda a: a[1], opt_align[0]['alignment'])))
-        # print('opt_cost:', opt_align[0]['cost'])
-        # print(list(map(lambda a: a[1], repairing_alignment[0]['alignment'])))
-        # print('rep_cost:', repairing_alignment[0]['cost'])
-        return alignments, repairing_alignment
-
-
-if __name__ == "__main__":
-    tree1 = pt_utils.parse("X( +( j, k, a ), *( X( b, +( h, i ) ), *( X( c, d ), ->( +( f, g ), e ), τ ), τ ) )")
-    tree2 = pt_utils.parse("X( +( j, k, a ), *( X( b, +( h, i ) ), *( X( c, d ), ->( *( f, g, τ ), e ), τ ), τ ) )")
-    logs = create_event_log("bn, mj, bcni, hncmf, h, ffjn, i, kj, fkn, lchbdf")
-
-    alignments = alignment_default_on_pt(tree2, logs)
-    optimal_cost = sum([align['cost'] for align in alignments])
-    # print(list(map(lambda a: a[1], alignments[0]['alignment'])))
-    print('optimal cost', optimal_cost)
-    alignments = alignment_on_loop_lock_pt(tree2, logs)
-    # print(list(map(lambda a: a[1], alignments[0]['alignment'])))
-    print('optimal cost', optimal_cost)
-    print(alignments)
-    # apply(tree1, tree2, logs)
+def apply(align, tree_info, mapping_t, com_res):
+    ranges = list()
+    for node_index in tree_info[com_res.subtree1.index].paths:
+        node = tree_info[node_index].tree
+        if node_index == 1:
+            ranges = [RangeInterval(0, len(align) - 1)]
+        elif node.parent.operator == Operator.LOOP:
+            ranges = compute_ranges_for_loop(align, tree_info, mapping_t, node.index, ranges)
+        elif node.parent.operator == Operator.SEQUENCE:
+            ranges = compute_ranges_for_sequence(align, tree_info, mapping_t, node.index, ranges)
+        elif node.parent.operator == Operator.XOR:
+            ranges = compute_ranges_for_xor(align, tree_info, mapping_t, node.index, ranges)
+    return ranges

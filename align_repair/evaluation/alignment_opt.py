@@ -7,11 +7,9 @@ from align_repair.process_tree.stochastic_generation import stochastic_pt_mutate
 from align_repair.process_tree.stochastic_generation import non_fitting_log_create as log_create
 from align_repair.process_tree.stochastic_generation import stochastic_pt_create as pt_create
 from align_repair.evaluation.execl_operation import object_read
-from align_repair.process_tree.alignments import detect_range
-from align_repair.evaluation.config import PT_FILE_NAME, LOG_FILE_NAME, ALIGN_FILE_NAME, ALIGN_SHEET_NAME, \
-    PT_NUM, REPAIR_SHEET_NAME, MPT_NUM
-from align_repair.evaluation import alignment_on_pt, print_event_log, alignment_default_on_pt,\
-    alignment_on_loop_lock_pt, alignment_on_lock_pt, create_event_log
+from align_repair.repair.optimal import align_repair_opt
+from align_repair.evaluation.config import PT_FILE_NAME, LOG_FILE_NAME, MPT_NUM
+from align_repair.evaluation import alignment_on_pt, print_event_log, create_event_log
 
 
 def compute_alignment():
@@ -24,11 +22,11 @@ def compute_alignment():
     ---------------
     Alignments, time without lock, time with lock, optimal cost, best_worst_cost
     """
-    trees = object_read.read_trees_from_file('../'+PT_FILE_NAME, 0)
-    m_trees = object_read.read_trees_from_file('../'+PT_FILE_NAME, 1)
-    logs = object_read.read_logs_from_file('../'+LOG_FILE_NAME)
+    trees = object_read.read_trees_from_file(PT_FILE_NAME, 0)
+    m_trees = object_read.read_trees_from_file(PT_FILE_NAME, 1)
+    logs = object_read.read_logs_from_file(LOG_FILE_NAME)
     for row, tree in enumerate(m_trees):
-        if 62 >= row >= 61:
+        if 12 <= row < 14:
             log = logs[row // MPT_NUM]
             tree = trees[row // MPT_NUM]
             m_tree = m_trees[row]
@@ -40,19 +38,18 @@ def align_info(tree, m_tree, log):
     print(tree)
     print(m_tree)
     print_event_log(log)
-    alignments = alignment_default_on_pt(m_tree, log)
-    optimal_cost = sum([align['cost'] for align in alignments])
-    print(alignments)
-    print('optimal cost', optimal_cost)
-    alignments = alignment_on_loop_lock_pt(m_tree, log)
-    optimal_cost = sum([align['cost'] for align in alignments])
-    print('optimal cost', optimal_cost)
-    print(alignments)
-    alignments = alignment_on_lock_pt(m_tree, log)
-    optimal_cost = sum([align['cost'] for align in alignments])
-    print('optimal cost', optimal_cost)
-    print(alignments)
-
+    # alignments = alignment_default_on_pt(m_tree, log)
+    # optimal_cost = sum([align['cost'] for align in alignments])
+    # print(alignments)
+    # print('optimal cost', optimal_cost)
+    # alignments = alignment_on_loop_lock_pt(m_tree, log)
+    # optimal_cost = sum([align['cost'] for align in alignments])
+    # print('optimal cost', optimal_cost)
+    # print(alignments)
+    # alignments = alignment_on_lock_pt(m_tree, log)
+    # optimal_cost = sum([align['cost'] for align in alignments])
+    # print('optimal cost', optimal_cost)
+    # print(alignments)
     start = time.time()
     alignment_on_pt(tree, log)
     alignments = alignment_on_pt(m_tree, log)
@@ -62,7 +59,8 @@ def align_info(tree, m_tree, log):
     print('optimal cost', optimal_cost)
 
     start = time.time()
-    alignments, repair_alignments = detect_range.apply(tree, m_tree, log)
+    parameters = {'ret_tuple_as_trans_desc': True}
+    alignments, repair_alignments = align_repair_opt.apply(tree, m_tree, log, parameters)
     end = time.time()
     print('optimal time:', end - start)
     optimal_cost = sum([align['cost'] for align in repair_alignments])
@@ -83,11 +81,11 @@ def compute_alignment1():
 
 if __name__ == "__main__":
     # compute_alignment()
-    # tree1 = pt_utils.parse("X( +( j, k, a ), *( X( b, +( h, i ) ), *( X( c, d ), ->( +( f, g ), e ), τ ), τ ) )")
-    # tree2 = pt_utils.parse("X( +( j, k, a ), *( X( b, +( h, i ) ), *( X( c, d ), ->( *( f, g, τ ), e ), τ ), τ ) )")
-    # logs = create_event_log("chbdf")
-    # # align_info(tree1, tree2, logs)
-    # alignments = alignment_default_on_pt(tree2, logs)
+    tree1 = pt_utils.parse("->( a, *( *( c, X( d, e ), τ ), b, τ ) )")
+    tree2 = pt_utils.parse("->( a, *( *( τ, X( d, e ), τ ), b, τ ) )")
+    logs = create_event_log("chcb")
+    align_info(tree1, tree2, logs)
+    # alignments = alignment_on_pt(tree2, logs)
     # optimal_cost = sum([align['cost'] for align in alignments])
     # print(list(map(lambda a: a[1], alignments[0]['alignment'])))
     # # print(alignments)
@@ -97,17 +95,8 @@ if __name__ == "__main__":
     # print(alignments[0]['alignment'])
     # optimal_cost = sum([align['cost'] for align in alignments])
     # print('optimal cost', optimal_cost)
-    tree1 = pt_utils.parse("X( ->( g, +( ->( i, j ), h ), k, l ), *( ->( e, f ), d, τ ), *( ->( b, c ), a, τ ) )")
-    tree2 = pt_utils.parse("X( *( ->( b, c ), a, τ ), ->( g, +( j, h ), k, l ), *( ->( e, f ), d, τ ))")
-    logs = create_event_log("bf, eog, jdof, ghglljo, mhaliol, boch, bc, efo, eof, hki, ")
-    # align_info(tree1, tree2, logs)
-    alignments = alignment_default_on_pt(tree2, logs)
-    optimal_cost = sum([align['cost'] for align in alignments])
-    print(list(map(lambda a: a[1], alignments[0]['alignment'])))
-    # print(alignments)
-    print('optimal cost', optimal_cost)
-    alignments = alignment_on_pt(tree2, logs)
-    # print(list(map(lambda a: a[1], alignments[0]['alignment'])))
-    print(alignments[0]['alignment'])
-    optimal_cost = sum([align['cost'] for align in alignments])
-    print('optimal cost', optimal_cost)
+    # alignments = alignment_on_lock_pt(tree2, logs)
+    # # print(list(map(lambda a: a[1], alignments[0]['alignment'])))
+    # print(alignments[0]['alignment'])
+    # optimal_cost = sum([align['cost'] for align in alignments])
+    # print('optimal cost', optimal_cost)

@@ -3,7 +3,7 @@ import time
 from pm4py.algo.conformance.alignments.utils import STD_MODEL_LOG_MOVE_COST
 
 from align_repair.process_tree.manipulation import pt_number
-from align_repair.repair import scope_expand, align_repair, general_scope_expand
+from align_repair.repair.lock_pt import align_repair, general_scope_expand, scope_expand
 from align_repair.evaluation.execl_operation import utils as excel_utils, object_read
 from align_repair.evaluation.execl_operation.excel_table import ExcelTable
 from align_repair.evaluation import alignment_on_lock_pt, alignment_on_pt, get_best_cost_on_pt, \

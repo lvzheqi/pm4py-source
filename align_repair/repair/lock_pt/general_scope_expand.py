@@ -212,10 +212,10 @@ def find_right_border(node, align, cur_pos, bound, ret_tuple_as_trans_desc):
 
         elif node.parent.operator == Operator.LOOP:
             if node.parent.children[0].index == node.index:  # first child
-                while not pt_align_utils.is_node_start(align[index], node.parent.children[1], True) and \
-                        not pt_align_utils.is_node_start(align[index], node.parent.children[2], True):
+                while not pt_align_utils.is_node_start(align[index], node.parent.children[1], ret_tuple_as_trans_desc) and \
+                        not pt_align_utils.is_node_start(align[index], node.parent.children[2], ret_tuple_as_trans_desc):
                     index += 1
-                if pt_align_utils.is_node_start(align[index], node.parent.children[1], True):
+                if pt_align_utils.is_node_start(align[index], node.parent.children[1], ret_tuple_as_trans_desc):
                     index = find_right_border(node.parent.children[1], align, index, bound, ret_tuple_as_trans_desc)
                 else:
                     index = find_right_border(node.parent.children[2], align, index, bound, ret_tuple_as_trans_desc)

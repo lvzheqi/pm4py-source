@@ -8,30 +8,23 @@ from pm4py.objects.process_tree import util as pt_utils
 from align_repair.process_tree.stochastic_generation import stochastic_pt_mutate as pt_mutate
 from align_repair.process_tree.stochastic_generation import non_fitting_log_create as log_create
 from align_repair.process_tree.stochastic_generation import stochastic_pt_create as pt_create
-from align_repair.process_tree.alignments import to_lock_align
 from align_repair.process_tree.manipulation import pt_number, utils as pt_mani_utils
-from align_repair.repair import scope_expand, align_repair
+from align_repair.repair.lock_pt import align_repair, scope_expand
 from align_repair.evaluation import create_event_log, print_short_alignment, \
-    alignment_on_lock_pt, get_best_cost_on_pt, print_event_log, alignment_on_loop_lock_pt, alignment_on_pt
+    alignment_on_lock_pt, get_best_cost_on_pt, print_event_log
 
 
 def compute_cost_and_time(tree, m_tree, log, parameters):
     ret_tuple_as_trans_desc = parameters['ret_tuple_as_trans_desc']
     pt_number.apply(tree, 'D', 1)
     pt_number.apply(m_tree, 'D', 1)
-    start = time.time()
-    if ret_tuple_as_trans_desc:
-        alignments = alignment_on_lock_pt(tree, log)
-    else:
-        alignments = alignment_on_loop_lock_pt(tree, log)
-        to_lock_align.apply(tree, alignments)
-    end = time.time()
-    ori_time = end - start
+
+    alignments = alignment_on_lock_pt(tree, log)
 
     # import copy
     # print_short_alignment(copy.deepcopy(alignments), ret_tuple_as_trans_desc)
     start = time.time()
-    optimal_alignments = alignment_on_loop_lock_pt(m_tree, log)
+    optimal_alignments = alignment_on_lock_pt(m_tree, log)
     end = time.time()
     optimal_time = end - start
     optimal_cost = sum([align['cost'] for align in optimal_alignments])
@@ -68,7 +61,7 @@ def compute_cost_and_time(tree, m_tree, log, parameters):
     return {"best_worst_cost": best_worst_cost, "repaired_cost": repaired_cost,
             "repaired_time": repaired_time, "optimal_cost": optimal_cost,
             "optimal_time": optimal_time, "scope_repair_cost": scope_repaired_cost,
-            "scope_repair_time": scope_repaired_time, 'original_time': ori_time, "grade1": grade1, "grade2": grade2}
+            "scope_repair_time": scope_repaired_time, "grade1": grade1, "grade2": grade2}
 
 
 def alignment_quality_log_based_on_tree1():
@@ -84,7 +77,7 @@ def alignment_quality_log_based_on_tree1():
 
 def creat_non_fitting_based_on_tree1(file, name, node_num):
     num = ["node", "best_worst_cost", "optimal_cost", "optimal_time", "repaired_cost", "repaired_time",
-           "scope_repair_cost", "scope_repair_time", "original_time", "grade1", "grade2"]
+           "scope_repair_cost", "scope_repair_time", "grade1", "grade2"]
     tree_num, mutated_num, log_num, non_fit_pro = 5, 1, 5, 0.9
     row_index = 0
     table = file.add_sheet(name)
@@ -102,13 +95,13 @@ def creat_non_fitting_based_on_tree1(file, name, node_num):
                 table.write(row_index, col, result[num[col]])
             row_index += 1
 
-            param2 = {'ret_tuple_as_trans_desc': False, 'COMPARE_OPTION': 1}
-            result2 = compute_cost_and_time(tree[i], m_tree[i][j], log[i], param2)
-            print_tree_align_compare(result2)
-            result2["node"] = node_num
-            for col in range(len(num)):
-                table.write(row_index, col, result2[num[col]])
-            row_index += 1
+            # param2 = {'ret_tuple_as_trans_desc': False, 'COMPARE_OPTION': 1}
+            # result2 = compute_cost_and_time(tree[i], m_tree[i][j], log[i], param2)
+            # print_tree_align_compare(result2)
+            # result2["node"] = node_num
+            # for col in range(len(num)):
+            #     table.write(row_index, col, result2[num[col]])
+            # row_index += 1
 
 
 def alignment_quality_log_based_on_tree2(parameters):
@@ -145,15 +138,12 @@ def creat_non_fitting_based_on_tree2(file, name, node_num, parameters):
 
 
 def test_compute_cost_time(parameters):
-    tree1 = pt_utils.parse("*( d, τ, τ )")
-    tree2 = pt_utils.parse("+( X( b, +( ->( g, h ), f ), +( c, *( d, e, τ ) ) ), a )")
-    log = create_event_log("dd")
-    start = time.time()
-    alignments = alignment_on_pt(tree1, log)
-    end = time.time()
-    print(end - start, alignments)
-    # result = compute_cost_and_time(tree1, tree2, log, parameters)
-    # print_tree_align_compare(result)
+    tree1 = pt_utils.parse("->( a, *( *( c, X( d, e ), τ ), b, τ ) )")
+    tree2 = pt_utils.parse("->( a, *( *( τ, X( d, e ), τ ), b, τ ) )")
+    log = create_event_log("chcb")
+
+    result = compute_cost_and_time(tree1, tree2, log, parameters)
+    print_tree_align_compare(result)
 
 
 def print_tree_align_compare(result):
@@ -182,3 +172,4 @@ if __name__ == "__main__":
     # alignment_quality_log_based_on_tree1()
     # param = {'ret_tuple_as_trans_desc': False, 'COMPARE_OPTION': 1}
     # alignment_quality_log_based_on_tree1(param)
+# abfbhchehbbhe, ahcchehch, a, ahgbhdbbhbhcbhehehddhchcchaehc, ahacchabchfdccdhchchb, fdch, dch, afb, ahcehehchechc, adebhcbdgdb, ,
