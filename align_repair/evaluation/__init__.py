@@ -68,7 +68,6 @@ def alignment_default_on_pt(tree, log):
 def alignment_on_pt(tree, log):
     net, initial_marking, final_marking = pt_to_lock_net.apply(tree)
     parameters = pt_align_utils.alignment_parameters(net)
-    parameters['ret_tuple_as_trans_desc'] = True
     alignments = align_factory.apply_log(log, net, initial_marking, final_marking, parameters)
     return alignments
 
@@ -91,8 +90,9 @@ def alignment_on_loop_lock_pt(tree, log):
     return alignments
 
 
-def get_best_cost_on_pt(tree):
-    return alignment_on_lock_pt(tree, EventLog([Trace()]))[0]['cost']
+def get_best_cost_on_pt(tree, log):
+    cost = alignment_on_lock_pt(tree, EventLog([Trace()]))[0]['cost']
+    return sum([cost + len(trace) * ali.utils.STD_MODEL_LOG_MOVE_COST for trace in log])
 
 
 def draw_normal_pn4pt(tree, parameters=None):

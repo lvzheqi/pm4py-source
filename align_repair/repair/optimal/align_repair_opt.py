@@ -8,7 +8,9 @@ from pm4py.algo.conformance.alignments.utils import STD_MODEL_LOG_MOVE_COST
 from align_repair.process_tree.alignments import utils as pt_align_utils
 from align_repair.process_tree.conversion import to_petri_net_with_lock as pt_to_lock_net
 from align_repair.process_tree.manipulation import pt_number, pt_compare
-from align_repair.repair.optimal import detect_range
+from align_repair.repair.optimal import detect_range_opt
+from align_repair.repair.optimal.utils import recursively_init_tree_tables
+
 
 STD_MODEL_MOD_MOVE_COST = 2
 
@@ -95,7 +97,7 @@ def compute_repairing_alignments(com_res, log, alignments, tree_info, mapping_t,
     for i, alignment in enumerate(alignments):
         align = alignment['alignment']
         if alignment.get("repair") is None:
-            ranges = detect_range.apply(align, tree_info, mapping_t, com_res)
+            ranges = detect_range_opt.apply(align, tree_info, mapping_t, com_res)
 
             if len(ranges) != 0:
                 align_repair_one_trace(alignment, log, ranges, mapping_t, com_res,
@@ -106,16 +108,16 @@ def compute_repairing_alignments(com_res, log, alignments, tree_info, mapping_t,
     return alignments
 
 
-def apply(tree, m_tree, log, parameters=None):
+def apply(tree, m_tree, log, parameters=None, option=1):
     pt_number.apply(tree, 'D')
     pt_number.apply(m_tree, 'D')
     alignments = apply_pt_alignments(log, tree, parameters)
-    com_res = pt_compare.apply(tree, m_tree, 1)
+    com_res = pt_compare.apply(tree, m_tree, option)
     if com_res.value:
         return alignments, copy.deepcopy(alignments)
     else:
         mapping_t, tree_info = dict(), dict()
-        detect_range.recursively_init_tree_tables(tree, tree_info, mapping_t, [1])
+        recursively_init_tree_tables(tree, tree_info, mapping_t, [1])
         best_worst_cost = apply_pt_alignments(EventLog([Trace()]), m_tree, parameters)[0]['cost']
         repairing_alignment = compute_repairing_alignments(com_res, log, alignments, tree_info, mapping_t,
                                                            parameters, best_worst_cost)

@@ -16,6 +16,9 @@ class CompareResult(object):
     def _get_subtree2(self):
         return self._subtree2
 
+    def _set_subtree1(self, subtree1):
+        self._subtree1 = subtree1
+
     def _set_subtree2(self, subtree2):
         self._subtree2 = subtree2
 
@@ -26,7 +29,7 @@ class CompareResult(object):
         return output
 
     value = property(_get_value)
-    subtree1 = property(_get_subtree1)
+    subtree1 = property(_get_subtree1, _set_subtree1)
     subtree2 = property(_get_subtree2, _set_subtree2)
 
 

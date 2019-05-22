@@ -28,7 +28,7 @@ def compute_cost_and_time(tree, m_tree, log, parameters):
     end = time.time()
     optimal_time = end - start
     optimal_cost = sum([align['cost'] for align in optimal_alignments])
-    best_worst_cost = sum([get_best_cost_on_pt(tree) + len(trace) * ali.utils.STD_MODEL_LOG_MOVE_COST for trace in log])
+    best_worst_cost = get_best_cost_on_pt(tree, log)
 
     start = time.time()
     repair_alignments = align_repair.apply(tree, m_tree, log, alignments, parameters)
