@@ -1,7 +1,6 @@
 import copy
 
 from pm4py.objects.log.log import Trace, EventLog, Event
-from pm4py.algo.conformance import alignments as ali
 from pm4py.algo.conformance.alignments import factory as align_factory
 from pm4py.algo.conformance.alignments.utils import STD_MODEL_LOG_MOVE_COST
 
@@ -73,8 +72,7 @@ def recompute_fitness(align, trace, best_worst_cost):
     if unfitness_upper_part == 0:
         align['fitness'] = 1
     elif (len(trace) + best_worst_cost) > 0:
-        align['fitness'] = 1 - align['cost'] / (
-                len(trace) * ali.utils.STD_MODEL_LOG_MOVE_COST + best_worst_cost)
+        align['fitness'] = 1 - align['cost'] / (len(trace) * 5 + best_worst_cost)
     else:
         align['fitness'] = 0
 
@@ -100,7 +98,7 @@ def compute_repairing_alignments(com_res, log, alignments, tree_info, mapping_t,
             ranges = detect_range_opt.apply(align, tree_info, mapping_t, com_res)
 
             if len(ranges) != 0:
-                align_repair_one_trace(alignment, log, ranges, mapping_t, com_res,
+                align_repair_one_trace(alignment, log[i], ranges, mapping_t, com_res,
                                        tree_info[com_res.subtree1.index].tree_range, parameters, best_worst_cost)
             alignment["repair"] = True
     for a in alignments:

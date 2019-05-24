@@ -7,10 +7,9 @@ from align_repair.process_tree.stochastic_generation import stochastic_pt_mutate
 from align_repair.process_tree.stochastic_generation import non_fitting_log_create as log_create
 from align_repair.process_tree.stochastic_generation import stochastic_pt_create as pt_create
 from align_repair.evaluation.execl_operation import object_read
-from align_repair.repair.optimal import align_repair_opt, align_repair, align_repair2
+from align_repair.repair.optimal import align_repair_opt
 from align_repair.evaluation.config import PT_FILE_NAME, LOG_FILE_NAME, MPT_NUM
-from align_repair.evaluation import alignment_on_pt, print_event_log, create_event_log, alignment_default_on_pt, \
-    get_best_cost_on_pt
+from align_repair.evaluation import alignment_on_pt, print_event_log, get_best_cost_on_pt, create_event_log
 
 
 def compute_alignment(apply, option):
@@ -43,7 +42,7 @@ def compute_alignment(apply, option):
             grade.append(info[5])
     df = pd.DataFrame({"optimal time": optimal_time, "optimal cost": optimal_cost, "best worst cost": best_worst_cost,
                        "repair align time": ra_time, "repair align cost": ra_cost, "grade": grade})
-    df.to_csv("xls/align_repair.csv")
+    df.to_csv("data/align_repair.csv")
 
 
 def align_info(tree, m_tree, log, apply, option):
@@ -81,7 +80,7 @@ def align_info(tree, m_tree, log, apply, option):
 
 
 def compute_alignment1(option, apply):
-    tree_num, mutated_num, log_num, non_fit_pro = 3, 1, 5, 0.9
+    tree_num, mutated_num, log_num, non_fit_pro = 500, 5, 5, 0.2
     node_num = [20, 25]
     tree = [pt_create.apply(random.randint(node_num[0], node_num[1])) for _ in range(tree_num)]
     m_tree = [[pt_mutate.apply(tree) for _ in range(mutated_num)] for tree in tree]
@@ -91,49 +90,6 @@ def compute_alignment1(option, apply):
             align_info(tree[i], m_tree[i][j], log[i], apply, option)
 
 
-def two_method_compare():
-    pf0 = pd.read_csv("xls/align_repair.csv", header=0)
-    pf1 = pd.read_csv("xls/align_repair2.csv", header=0)
-    time_com = pd.DataFrame({"method1": pf0['repair align time'], "method2": pf1['repair align time']})
-    # grade = pd.DataFrame({"method1": pf0['grade'], "method2": pf1['grade']})
-
-    import matplotlib.pyplot as plt
-    time_com.plot()
-    plt.ylabel("Time")
-    # grade.plot()
-    plt.title("Compare Time with Different Option")
-    plt.savefig("xls/TwoMethodCompare")
-
-
-def grade_compare():
-    import matplotlib.pyplot as plt
-    pf0 = pd.read_csv("xls/align_repair.csv", header=0)
-    pf1 = pd.read_csv("xls/opt_align.csv", header=0)
-    pf2 = pd.read_csv("xls/opt_align_option2.csv", header=0)
-    grade = pd.DataFrame({"align repair": pf0['grade'], "expand align repair grade1": pf1['grade'],
-                          "expand align repair grade2": pf2['grade']})
-    grade.plot()
-    plt.ylabel("Grade")
-    plt.title("Compare Grade with Different Option")
-    # plt.ylim(0.6, 1)
-    plt.savefig("xls/CompareGrade1")
-
-
-def time_compare():
-    import matplotlib.pyplot as plt
-    pf0 = pd.read_csv("xls/align_repair.csv", header=0)
-    pf1 = pd.read_csv("xls/opt_align.csv", header=0)
-    pf2 = pd.read_csv("xls/opt_align_option2.csv", header=0)
-    grade = pd.DataFrame({"optimal align time": pf0['optimal time'],
-                          "repair align time": pf0['repair align time'],
-                          "expand repair align time option1": pf1['repair align time'],
-                          "expand repair align time option2": pf2['repair align time']})
-    grade.plot()
-    plt.ylabel("Time")
-    plt.title("Compare Time with Different Option")
-    plt.savefig("xls/CompareTime1")
-
-
 if __name__ == "__main__":
     # grade_compare()
     # time_compare()
@@ -141,22 +97,7 @@ if __name__ == "__main__":
     # compute_alignment(align_repair_opt.apply, 2)
     tree1 = pt_utils.parse("*( a, ->( X( b, ->( c, d ) ), e, f ), τ )")
     tree2 = pt_utils.parse("*( a, ->( *( b, ->( c, d ), τ ), e, f ), τ )")
-    logs_ = create_event_log("fchbcfbeahbbfhb")
+    logs_ = log_create.apply(tree1, 1, 0.2)
+    # logs_ = create_event_log("bedabefa")
     # deeef, dbhceh
     align_info(tree1, tree2, logs_, align_repair_opt.apply, 2)
-    # align_info(tree1, tree2, logs_, align_repair2.apply, 1)
-    # alignments = alignment_on_pt(tree2, logs)
-    # optimal_cost = sum([align['cost'] for align in alignments])
-    # print(list(map(lambda a: a[1], alignments[0]['alignment'])))
-    # # print(alignments)
-    # print('optimal cost', optimal_cost)
-    # alignments = alignment_on_loop_lock_pt(tree2, logs)
-    # # print(list(map(lambda a: a[1], alignments[0]['alignment'])))
-    # print(alignments[0]['alignment'])
-    # optimal_cost = sum([align['cost'] for align in alignments])
-    # print('optimal cost', optimal_cost)
-    # alignments = alignment_on_lock_pt(tree2, logs)
-    # # print(list(map(lambda a: a[1], alignments[0]['alignment'])))
-    # print(alignments[0]['alignment'])
-    # optimal_cost = sum([align['cost'] for align in alignments])
-    # print('optimal cost', optimal_cost)
