@@ -17,35 +17,32 @@ LOG_SHEET_NAME = ['log' + str(i) + "-" + str(j) for (i, j) in PT_RANGE]
 ALIGN_SHEET_NAME = ['align' + str(i) + "-" + str(j) for (i, j) in PT_RANGE]
 
 
-PT_FILE_NAME = os.path.join("xls", "ProcessTree.xls")
-LOG_FILE_NAME = os.path.join("xls", "EventLog.xls")
+PT_FILE_NAME = os.path.join("data", "ProcessTree.data")
+LOG_FILE_NAME = os.path.join("data", "EventLog.data")
 
-ALIGN_FILE_NAME = os.path.join("xls", "Alignments.xls")
-ALIGN_MT1_FILE_NAME = os.path.join("xls", "AlignmentsMT1.xls")
-ALIGN_MT2_FILE_NAME = os.path.join("xls", "AlignmentsMT2.xls")
-ALIGN_MT3_FILE_NAME = os.path.join("xls", "AlignmentsMT3.xls")
-ALIGN_MT4_FILE_NAME = os.path.join("xls", "AlignmentsMT4.xls")
+ALIGN_FILE_NAME = os.path.join("data", "Alignments.data")
+ALIGN_MT1_FILE_NAME = os.path.join("data", "AlignmentsMT1.data")
+ALIGN_MT2_FILE_NAME = os.path.join("data", "AlignmentsMT2.data")
+ALIGN_MT3_FILE_NAME = os.path.join("data", "AlignmentsMT3.data")
+ALIGN_MT4_FILE_NAME = os.path.join("data", "AlignmentsMT4.data")
 ALIGN_MTS = [ALIGN_MT1_FILE_NAME, ALIGN_MT2_FILE_NAME, ALIGN_MT3_FILE_NAME, ALIGN_MT4_FILE_NAME]
 
 REPAIR_SHEET_NAME = ['repair' + str(i) + "-" + str(j) for (i, j) in PT_RANGE]
 
-REPAIR1_FILE_NAME = os.path.join("xls", "RepairResult1.xls")
-REPAIR2_FILE_NAME = os.path.join("xls", "RepairResult2.xls")
-REPAIR3_FILE_NAME = os.path.join("xls", "RepairResult3.xls")
-REPAIR4_FILE_NAME = os.path.join("xls", "RepairResult4.xls")
+REPAIR1_FILE_NAME = os.path.join("data", "RepairResult1.data")
+REPAIR2_FILE_NAME = os.path.join("data", "RepairResult2.data")
+REPAIR3_FILE_NAME = os.path.join("data", "RepairResult3.data")
+REPAIR4_FILE_NAME = os.path.join("data", "RepairResult4.data")
 REPAIR_RESULTS = [REPAIR1_FILE_NAME, REPAIR2_FILE_NAME, REPAIR3_FILE_NAME, REPAIR4_FILE_NAME]
 
-EAP1_FILE_NAME = os.path.join("xls", "EXP1.xls")
-EAP2_FILE_NAME = os.path.join("xls", "EXP2.xls")
-EAP3_FILE_NAME = os.path.join("xls", "EXP3.xls")
-EAP4_FILE_NAME = os.path.join("xls", "EXP4.xls")
+EAP1_FILE_NAME = os.path.join("data", "EXP1.data")
+EAP2_FILE_NAME = os.path.join("data", "EXP2.data")
+EAP3_FILE_NAME = os.path.join("data", "EXP3.data")
+EAP4_FILE_NAME = os.path.join("data", "EXP4.data")
 EAP_ALIGNS = [EAP1_FILE_NAME, EAP2_FILE_NAME, EAP3_FILE_NAME, EAP4_FILE_NAME]
 
-OP2_REPAIR1_RESULT = os.path.join("xls", "Op2RepairResult1.xls")
-OP2_REPAIR2_RESULT = os.path.join("xls", "Op2RepairResult2.xls")
-OP2_REPAIR3_RESULT = os.path.join("xls", "Op2RepairResult3.xls")
-OP2_REPAIR4_RESULT = os.path.join("xls", "Op2RepairResult4.xls")
+OP2_REPAIR1_RESULT = os.path.join("data", "Op2RepairResult1.data")
+OP2_REPAIR2_RESULT = os.path.join("data", "Op2RepairResult2.data")
+OP2_REPAIR3_RESULT = os.path.join("data", "Op2RepairResult3.data")
+OP2_REPAIR4_RESULT = os.path.join("data", "Op2RepairResult4.data")
 OP2_REPAIR_RESULTS = [OP2_REPAIR1_RESULT, OP2_REPAIR2_RESULT, OP2_REPAIR3_RESULT, OP2_REPAIR4_RESULT]
-
-
-# TODO: Consider how to translate more variable
