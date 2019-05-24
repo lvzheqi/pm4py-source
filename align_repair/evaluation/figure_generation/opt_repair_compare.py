@@ -12,6 +12,7 @@ def avg_runtime_without_lock(trees, m_trees, logs):
     start = time.time()
     for i in range(len(trees)):
         for j in range(len(m_trees[0])):
+            print('round', i, j)
             alignment_on_pt(trees[i], logs[i])
             alignment_on_pt(m_trees[i][j], logs[i])
     end = time.time()
@@ -23,6 +24,7 @@ def avg_runtime_with_lock(trees, m_trees, logs):
     start = time.time()
     for i in range(len(trees)):
         for j in range(len(m_trees[0])):
+            print('round', i, j)
             align_repair_opt.apply(trees[i], m_trees[0][j], logs[i], {'ret_tuple_as_trans_desc': True})
     end = time.time()
     print((end - start) / (len(trees) * len(m_trees[0])))
@@ -62,21 +64,21 @@ def compute_run_time():
     tree4 = [pt_create.apply(random.randint(26, 30)) for _ in range(no_tree)]
     log4 = [log_create.apply(tree, no_event, pro) for tree in tree4]
     m_tree4 = [[pt_mutate.apply(tree) for _ in range(mutated_num)] for tree in tree4]
-    tree5 = [pt_create.apply(random.randint(31, 33)) for _ in range(no_tree)]
-    log5 = [log_create.apply(tree, no_event, pro) for tree in tree5]
-    m_tree5 = [[pt_mutate.apply(tree) for _ in range(mutated_num)] for tree in tree5]
-    tree6 = [pt_create.apply(random.randint(34, 35)) for _ in range(no_tree)]
-    log6 = [log_create.apply(tree, no_event, pro) for tree in tree6]
-    m_tree6 = [[pt_mutate.apply(tree) for _ in range(mutated_num)] for tree in tree6]
+    # tree5 = [pt_create.apply(random.randint(31, 33)) for _ in range(no_tree)]
+    # log5 = [log_create.apply(tree, no_event, pro) for tree in tree5]
+    # m_tree5 = [[pt_mutate.apply(tree) for _ in range(mutated_num)] for tree in tree5]
+    # tree6 = [pt_create.apply(random.randint(34, 35)) for _ in range(no_tree)]
+    # log6 = [log_create.apply(tree, no_event, pro) for tree in tree6]
+    # m_tree6 = [[pt_mutate.apply(tree) for _ in range(mutated_num)] for tree in tree6]
 
     l_without_lock = list(map(lambda tree_log: avg_runtime_without_lock(tree_log[0], tree_log[1], tree_log[2]),
                               [(tree1, m_tree1, log1), (tree2, m_tree2, log2), (tree3, m_tree3, log3),
-                               (tree4, m_tree4, log4), (tree5, m_tree5, log5), (tree6, m_tree6, log6)]))
-    # [(tree1, log1), (tree2, log2), (tree3, log3), (tree4, log4), (tree5, log5), (tree6, log6)]))
+                               (tree4, m_tree4, log4)]))
+    # , (tree5, m_tree5, log5), (tree6, m_tree6, log6)
     l_with_lock = list(map(lambda tree_log: avg_runtime_with_lock(tree_log[0], tree_log[1], tree_log[2]),
                            [(tree1, m_tree1, log1), (tree2, m_tree2, log2), (tree3, m_tree3, log3),
-                            (tree4, m_tree4, log4), (tree5, m_tree5, log5), (tree6, m_tree6, log6)]))
-    # [(tree1, log1), (tree2, log2), (tree3, log3), (tree4, log4), (tree5, log5), (tree6, log6)]))
+                            (tree4, m_tree4, log4)]))
+    # , (tree5, m_tree5, log5), (tree6, m_tree6, log6)
     plot_histogram_lock_runtime(l_without_lock, l_with_lock)
 
 
