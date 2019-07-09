@@ -9,17 +9,18 @@ from align_repair.process_tree.stochastic_generation import stochastic_pt_mutate
 from align_repair.process_tree.stochastic_generation import stochastic_pt_create as pt_create
 from align_repair.process_tree.stochastic_generation import non_fitting_log_create as log_create
 from align_repair.process_tree.manipulation import pt_number, utils as pt_mani_utils
-from align_repair.evaluation import alignment_on_pt, create_event_log, get_best_cost_on_pt
-from align_repair.repair.optimal import align_repair_opt
+from align_repair.evaluation import alignment_on_pt, create_event_log, get_best_cost_on_pt, print_event_log
+from align_repair.repair.optimal import align_repair_opt, align_repair2, align_repair
 
-PATH = '../../data/'
+PATH = '../../data/D2/'
+#
 PT_RANGE = [(11, 15), (16, 18), (19, 21), (22, 24)]
 SHEET_NAME = [str(i) + "-" + str(j) for (i, j) in PT_RANGE]
-pt_num, mpt_num, trace_num, non_fit_pro = 2, 2, 5, 0.2
-depths = [3, 4]
+pt_num, mpt_num, trace_num, non_fit_pro = 1, 5, 3, 0.2
+depths = [3, 4, 5]
 tree_file = PATH + 'ProcessTree.xlsx'
 m_tree_file = PATH + 'MProcessTree.xlsx'
-log_file = PATH + 'log.xlsx'
+log_file = PATH + '0.2/log.xlsx'
 align_file = PATH + 'align_opt.xlsx'
 
 
@@ -45,7 +46,7 @@ def create_m_pts(pts):
             for depth in depths:
                 for j in range(mpt_num):
                     m_tree = pt_mutate.apply(tree, depth)
-                    m_trees.loc[len(m_trees.index)] = trees.loc[i].tolist() + [str(m_tree), depths]
+                    m_trees.loc[len(m_trees.index)] = trees.loc[i].tolist() + [str(m_tree), depth]
         m_pts.append(m_trees)
     return m_pts
 
@@ -84,7 +85,7 @@ def random_create_dataset():
 
 
 def apply_align_on_one_pt(tree, m_tree, log, apply, option):
-    best_worst_cost = get_best_cost_on_pt(tree, log)
+    best_worst_cost = get_best_cost_on_pt(m_tree, log)
 
     start = time.time()
     alignment_on_pt(tree, log)
@@ -99,9 +100,9 @@ def apply_align_on_one_pt(tree, m_tree, log, apply, option):
     parameters = {'ret_tuple_as_trans_desc': True}
     alignments, repair_alignments = apply(tree, m_tree, log, parameters, option)
     end = time.time()
-    print(repair_alignments)
     ra_time = end - start
     print('repair time:', end - start)
+
     ra_cost = sum([align['cost'] for align in repair_alignments])
     grade = 1 - (ra_cost - optimal_cost) / (best_worst_cost - optimal_cost) \
         if best_worst_cost != optimal_cost else 1
@@ -110,9 +111,10 @@ def apply_align_on_one_pt(tree, m_tree, log, apply, option):
     return [optimal_time, optimal_cost, best_worst_cost, ra_time, ra_cost, grade]
 
 
-def compute_align_grade(num, apply, option):
+def compute_align_grade(num, apply, option, file):
     mp_trees = pd.read_excel(m_tree_file, sheet_name=SHEET_NAME)
     logs = pd.read_excel(log_file, sheet_name=SHEET_NAME)
+
     align_result = list()
     for i in mp_trees:
         log_list = logs[i]['log'].tolist()
@@ -122,16 +124,97 @@ def compute_align_grade(num, apply, option):
                                            "repair align time", "repair align cost", "grade"])
         for j, m_tree in enumerate(mpt_list):
             m_tree = pt_utils.parse(m_tree)
-            tree = pt_utils.parse(tree_list[j // num])
+            tree = pt_utils.parse(tree_list[j])
             log = create_event_log(log_list[j // num])
             align_info.loc[len(align_info.index)] = apply_align_on_one_pt(tree, m_tree, log, apply, option)
         align_result.append(align_info)
 
-    with pd.ExcelWriter(align_file) as writer:
+    with pd.ExcelWriter(file) as writer:
         for i, align in enumerate(align_result):
             align.to_excel(writer, sheet_name=SHEET_NAME[i], index=False)
 
 
+def apply_align_on_one_pt2(tree, m_tree, log):
+    best_worst_cost = get_best_cost_on_pt(m_tree, log)
+
+    start = time.time()
+    alignment_on_pt(tree, log)
+    alignments = alignment_on_pt(m_tree, log)
+    end = time.time()
+    optimal_time = end - start
+    print('optimal time:', end - start)
+    optimal_cost = sum([align['cost'] for align in alignments])
+    print('optimal cost', optimal_cost)
+
+    parameters = {'ret_tuple_as_trans_desc': True}
+    start = time.time()
+    alignments = align_repair_opt.apply_pt_alignments(log, tree, parameters)
+    end = time.time()
+    align_time = end - start
+
+    start = time.time()
+    alignments, repair_alignments = align_repair.apply_with_alignments(tree, m_tree, log, alignments, parameters, 1)
+    end = time.time()
+    ra_time = end - start + align_time
+
+    start = time.time()
+    alignments2, repair_alignments2 = align_repair2.apply_with_alignments(tree, m_tree, log, alignments, parameters, 1)
+    end = time.time()
+    ra_time2 = end - start + align_time
+
+    print('repair time:', ra_time, ra_time2)
+
+    ra_cost = sum([align['cost'] for align in repair_alignments])
+    grade = 1 - (ra_cost - optimal_cost) / (best_worst_cost - optimal_cost) \
+        if best_worst_cost != optimal_cost else 1
+
+    ra_cost2 = sum([align['cost'] for align in repair_alignments2])
+    grade2 = 1 - (ra_cost2 - optimal_cost) / (best_worst_cost - optimal_cost) \
+        if best_worst_cost != optimal_cost else 1
+    print('repair cost', ra_cost, ra_cost2)
+    print('grade', grade, grade2)
+
+    return [[optimal_time, optimal_cost, best_worst_cost, ra_time, ra_cost, grade],
+            [optimal_time, optimal_cost, best_worst_cost, ra_time2, ra_cost2, grade2]]
+
+
+def compute_align_grade1(num):
+    mp_trees = pd.read_excel(m_tree_file, sheet_name=SHEET_NAME)
+    logs = pd.read_excel(log_file, sheet_name=SHEET_NAME)
+
+    align_result = list()
+    align_result2 = list()
+    for i in mp_trees:
+        log_list = logs[i]['log'].tolist()
+        tree_list = mp_trees[i]['tree'].tolist()
+        mpt_list = mp_trees[i]['m_tree'].tolist()
+        align_info = pd.DataFrame(columns=["optimal time", "optimal cost", "best worst cost",
+                                           "repair align time", "repair align cost", "grade"])
+        align_info2 = pd.DataFrame(columns=["optimal time", "optimal cost", "best worst cost",
+                                            "repair align time", "repair align cost", "grade"])
+        for j, m_tree in enumerate(mpt_list):
+            m_tree = pt_utils.parse(m_tree)
+            tree = pt_utils.parse(tree_list[j])
+            log = create_event_log(log_list[j // num])
+            info = apply_align_on_one_pt2(tree, m_tree, log)
+            align_info.loc[len(align_info.index)] = info[0]
+            align_info2.loc[len(align_info.index)] = info[1]
+        align_result.append(align_info)
+        align_result2.append(align_info2)
+
+    with pd.ExcelWriter(PATH + 'align_repair1.xlsx') as writer:
+        for i, align in enumerate(align_result):
+            align.to_excel(writer, sheet_name=SHEET_NAME[i], index=False)
+
+    with pd.ExcelWriter(PATH + 'align_repair2.xlsx') as writer:
+        for i, align in enumerate(align_result2):
+            align.to_excel(writer, sheet_name=SHEET_NAME[i], index=False)
+
+
 if __name__ == "__main__":
-    random_create_dataset()
-    compute_align_grade(len(depths) * mpt_num, align_repair_opt.apply, 2)
+    # random_create_dataset()
+    # compute_align_grade1(len(depths) * mpt_num)
+    # compute_align_grade(len(depths) * mpt_num, align_repair_opt.apply, 1, PATH + 'align_opt1.xlsx')
+    compute_align_grade(len(depths) * mpt_num, align_repair_opt.apply, 2, PATH + 'align_opt2.xlsx')
+    # PATH = '../../data/D3/'
+    # compute_align_grade(len(depths) * mpt_num, align_repair_opt.apply, 2, PATH + 'align_opt2.xlsx')

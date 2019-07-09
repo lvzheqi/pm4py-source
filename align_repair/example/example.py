@@ -117,7 +117,7 @@ def example_pt2pn_with_lock():
     """
     print_spilt_start("pt2pn-without-lock")
     tree = pm4py.objects.process_tree.pt_util.parse("* (a, b, τ)")
-    net, _, _ = align_repair.process_tree.conversion.to_petri_net_with_lock.apply(tree, )
+    net, _, final_markting = align_repair.process_tree.conversion.to_petri_net_with_lock.apply(tree, )
     gviz = pm4py.visualization.petrinet.factory.apply(net)
     pm4py.visualization.petrinet.factory.view(gviz)
 
@@ -314,15 +314,24 @@ def print_spilt_end():
 
 
 if __name__ == "__main__":
-    example_create_random_tree()
-    example_create_mutated_tree()
-    example_create_non_fitting_event_log()
-    example_compare_process_tree()
-    example_number_process_tree()
-    example_pt2pn_with_lock()
-    example_lock_alignment_parameters()
-    example_add_lock_to_alignment()
-    example_repair_alignment()
-    example_scope_expand()
-    example_general()
-    example_optimal_repair_alignment()
+    # example_create_random_tree()
+    # example_create_mutated_tree()
+    # example_create_non_fitting_event_log()
+    # example_compare_process_tree()
+    # example_number_process_tree()
+    # example_pt2pn_with_lock()
+    # example_lock_alignment_parameters()
+    # example_add_lock_to_alignment()
+    # example_repair_alignment()
+    # example_scope_expand()
+    # example_general()
+    # example_optimal_repair_alignment()
+    from pm4py.algo.discovery.alpha import factory as alpha_to_pt
+    from pm4py.objects.log.importer.xes import factory as xes_importer
+
+    log = xes_importer.apply("APM_Assignment_1.xes")
+    net, init_marking, final_ma = alpha_to_pt.apply(log)
+    gviz = pm4py.visualization.petrinet.factory.apply(net)
+    pm4py.visualization.petrinet.factory.view(gviz)
+
+    print(final_ma)

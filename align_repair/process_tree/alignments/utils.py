@@ -68,7 +68,11 @@ def move_index(move, mapping_t, ret_tuple_as_trans_desc):
     if is_none_move(move, ret_tuple_as_trans_desc):
         return int(node_index_for_silent_move(move, ret_tuple_as_trans_desc))
     else:
-        return mapping_t[model_label(move, ret_tuple_as_trans_desc)]
+        label = model_label(move, ret_tuple_as_trans_desc)
+        if label.endswith('_s') or label.endswith('_e'):
+            return int(label[:-2])
+        else:
+            return mapping_t[label]
 
 
 def move_in_subtree(move, tree_range, mapping_t):

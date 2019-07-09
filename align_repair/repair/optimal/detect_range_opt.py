@@ -108,7 +108,8 @@ def compute_ranges_for_loop(align, tree_info, mapping_t, node_index, ranges):
                         break
                     left_bound = cur_pos = ri.lower_bound
                     scatter_align = False
-                cur_pos += 1
+                else:
+                    cur_pos += 1
     return new_ranges
 
 

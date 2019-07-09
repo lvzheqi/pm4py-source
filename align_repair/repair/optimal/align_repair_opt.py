@@ -96,7 +96,7 @@ def compute_repairing_alignments(com_res, log, alignments, tree_info, mapping_t,
         align = alignment['alignment']
         if alignment.get("repair") is None:
             ranges = detect_range_opt.apply(align, tree_info, mapping_t, com_res)
-
+            print(ranges)
             if len(ranges) != 0:
                 align_repair_one_trace(alignment, log[i], ranges, mapping_t, com_res,
                                        tree_info[com_res.subtree1.index].tree_range, parameters, best_worst_cost)
@@ -110,6 +110,21 @@ def apply(tree, m_tree, log, parameters=None, option=1):
     pt_number.apply(tree, 'D')
     pt_number.apply(m_tree, 'D')
     alignments = apply_pt_alignments(log, tree, parameters)
+    com_res = pt_compare.apply(tree, m_tree, option)
+    if com_res.value:
+        return alignments, copy.deepcopy(alignments)
+    else:
+        mapping_t, tree_info = dict(), dict()
+        recursively_init_tree_tables(tree, tree_info, mapping_t, [1])
+        best_worst_cost = apply_pt_alignments(EventLog([Trace()]), m_tree, parameters)[0]['cost']
+        repairing_alignment = compute_repairing_alignments(com_res, log, alignments, tree_info, mapping_t,
+                                                           parameters, best_worst_cost)
+    return alignments, repairing_alignment
+
+
+def apply_with_alignments(tree, m_tree, log, alignments, parameters=None, option=1):
+    pt_number.apply(tree, 'D')
+    pt_number.apply(m_tree, 'D')
     com_res = pt_compare.apply(tree, m_tree, option)
     if com_res.value:
         return alignments, copy.deepcopy(alignments)
