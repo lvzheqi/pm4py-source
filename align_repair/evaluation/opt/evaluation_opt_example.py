@@ -96,7 +96,9 @@ def repair_align_compare(tree, m_tree, log):
     alignments = align_repair_opt.apply_pt_alignments(log, tree, parameters)
 
     alignments, repair_alignments = align_repair_lock.apply_with_alignments(tree, m_tree, log, alignments, parameters, 1)
+    print(repair_alignments)
     alignments2, repair_alignments2 = align_repair_opt.apply_with_alignments(tree, m_tree, log, alignments, parameters, 1)
+    print(repair_alignments2)
 
     ra_cost = sum([align['cost'] for align in repair_alignments])
     grade = 1 - (ra_cost - optimal_cost) / (best_worst_cost - optimal_cost) \
@@ -110,6 +112,9 @@ def repair_align_compare(tree, m_tree, log):
 
     if grade != grade2:
         print(grade, grade2)
+        print(tree)
+        print(m_tree)
+        print_event_log(log)
         print("Oh my God")
         exit(-1)
     # print('---------------------------------')
@@ -142,7 +147,8 @@ def compute_alignment1(apply, option):
         # ra_time.append(info[3])
         # ra_cost.append(info[4])
         # grade.append(info[5])
-        repair_align_compare(pt_utils.parse(trees[i]), pt_utils.parse(m_trees[i]), create_event_log(logs[i // 15]))
+        if i > 200:
+            repair_align_compare(pt_utils.parse(trees[i]), pt_utils.parse(m_trees[i]), create_event_log(logs[i // 15]))
     df = pd.DataFrame({"optimal time": optimal_time, "optimal cost": optimal_cost, "best worst cost": best_worst_cost,
                        "repair align time": ra_time, "repair align cost": ra_cost, "grade": grade})
     df.to_csv(PATH + "align_repair_opt2.csv")
@@ -152,13 +158,14 @@ if __name__ == "__main__":
     # grade_compare()
     # time_compare()
     # two_method_compare()
-    compute_alignment1(align_repair_lock.apply, 2)
-    # tree1 = pt_utils.parse("X( b, X(c, d), e)")
-    # tree2 = pt_utils.parse("X( b, +(c, d), e)")
-    # logs_ = create_event_log("cdf")
+    # compute_alignment1(align_repair_lock.apply, 1)
+    tree1 = pt_utils.parse("*( X( ->( b, c ), +( X( i, j ), X( g, h, ->( d, e, f ) ) ) ), a, τ )")
+    tree2 = pt_utils.parse("*( X( ->( b, c ), +( X( i, j ), X( g, h, ->( d, e, f, l ) ) ) ), a, τ )")
+    logs_ = create_event_log("jfljgabc")
     # align_repair_lock.apply(tree1, tree2, logs_)
+    # align_info(tree1, tree2, logs_, align_repair_opt.apply, 1)
+    repair_align_compare(tree1, tree2, logs_)
 
-    # align_info(tree1, tree2, logs_, align_repair_opt.apply, 2)
     #
     # f_trees = pd.read_csv("sub_trees.csv")
     # f_logs = pd.read_csv("sub_logs.csv")

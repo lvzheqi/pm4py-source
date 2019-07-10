@@ -95,6 +95,7 @@ def compute_repairing_alignments(com_res, log, alignments, tree_info, mapping_t,
     for i, alignment in enumerate(alignments):
         align = alignment['alignment']
         if alignment.get("repair") is None:
+            print(align)
             ranges = detect_range_opt.apply(align, tree_info, mapping_t, com_res)
             print(ranges)
             if len(ranges) != 0:

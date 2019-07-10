@@ -253,6 +253,7 @@ def move_move(align, cur_pos, index):
 
 def scope_expand_trace(align, subtree, ret_tuple_as_trans_desc):
     index = search_scope_index(align, subtree, ret_tuple_as_trans_desc)
+    print(index)
     left_border = -1
     for i in range(len(index) // 2):
         right_border = min(len(align), index[(i + 1) * 2]) if (i + 1) * 2 < len(index) else len(align)

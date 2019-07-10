@@ -43,7 +43,9 @@ def remove_lock(align, index):
             while pos - 1 >= 0 and index[pos - 1] >= i:
                 pos -= 1
             for j in range(pos, len(index)):
-                if index[j] != 0:
+                if j % 2 == 0 and index[j] == i:
+                    pass
+                else:
                     index[j] -= 1
             align.pop(i)
     return index
@@ -54,10 +56,12 @@ def compute_repairing_alignments(tree, com_res, log, alignments, tree_info, mapp
     for i, alignment in enumerate(alignments):
         align = alignment['alignment']
         if alignment.get("repair") is None:
+            print(align)
             add_lock_for_each_node(tree, align, tree_info, mapping_t)
             scope_expand.scope_expand_trace(align, com_res.subtree1, True)
             index = scope_expand.search_scope_index(align, com_res.subtree1, True)
             index = remove_lock(align, index)
+            print("index", index)
             ranges = list()
             for j in range(len(index)//2):
                 ranges.append(RangeInterval(index[j * 2], index[j * 2 + 1]))
