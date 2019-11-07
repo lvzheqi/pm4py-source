@@ -1,13 +1,13 @@
 import copy
 
 from pm4py.objects.process_tree.pt_operator import Operator
-from pm4py.algo.conformance.alignments.versions.state_equation_a_star import PARAM_ALIGNMENT_RESULT_IS_SYNC_PROD_AWARE
 
 from repair_alignment.process_tree.operation import pt_compare, utils as pt_mani_utils
 from repair_alignment.process_tree.operation.pt_compare import CompareResult
 from repair_alignment.algo.range_detection import rd_linear
 from repair_alignment.algo.utils import align_utils, tree_utils
 from repair_alignment.algo.utils.tree_utils import RangeInterval
+from repair_alignment.process_tree.conversion.to_petri_net import LOCK_START, LOCK_END
 
 
 def search_scope_index(align, node, ret_tuple_as_trans_desc):
@@ -107,6 +107,7 @@ def find_left_border(node, align, cur_pos, bound, ret_tuple_as_trans_desc):
     if align_utils.is_node_end(align[index], node, ret_tuple_as_trans_desc):
         flag = 0
         children = pt_mani_utils.lock_tree_labels(node)
+        print("children", children)
         while not align_utils.is_node_start(align[index], node, ret_tuple_as_trans_desc):
             if not align_utils.check_model_label_belong_to_subtree(align[index], children, ret_tuple_as_trans_desc):
                 move_move(align, index, cur_pos)
@@ -254,23 +255,23 @@ def move_move(align, cur_pos, index):
     align.insert(index, move)
 
 
-def add_lock_for_each_node(tree, align, tree_info, mapping_t):
+def add_lock_for_each_node(tree, align, tree_info, mapping_t, ret_tuple_as_trans_desc):
     node_list = pt_mani_utils.parse_tree_to_a_bfs_sequence(tree)
     for node in node_list:
         com_res = CompareResult(True, node, node)
         stop_condition = tree_utils.detect_stop_condition(node, tree_info)
-        ranges = rd_linear.apply(align, tree_info, mapping_t, com_res, stop_condition)
+        ranges = rd_linear.apply(align, tree_info, mapping_t, com_res, stop_condition, ret_tuple_as_trans_desc)
         for ri in ranges[::-1]:
-            move = ((">>", str(node.index) + '_e_1'), (">>", str(node.index) + '_e'))
+            move = ((">>", str(node.index) + LOCK_END + '_1'), (">>", str(node.index) + LOCK_END))
             align.insert(ri.upper_bound + 1, move)
-            move = ((">>", str(node.index) + '_s_1'), (">>", str(node.index) + '_s'))
+            move = ((">>", str(node.index) + LOCK_START + '1'), (">>", str(node.index) + LOCK_START))
             align.insert(ri.lower_bound, move)
 
 
 def remove_lock(align, index):
     pos = len(index)
     for i in range(len(align) - 1, -1, -1):
-        if align[i][1][1] is not None and (align[i][1][1].endswith('_s') or align[i][1][1].endswith('_e')):
+        if align[i][1][1] is not None and (align[i][1][1].endswith(LOCK_START) or align[i][1][1].endswith(LOCK_END)):
             while pos - 1 >= 0 and index[pos - 1] >= i:
                 pos -= 1
             for j in range(pos, len(index)):
@@ -292,27 +293,23 @@ def scope_expand_trace(align, subtree, ret_tuple_as_trans_desc):
     return align
 
 
-def apply_with_lock(alignments, tree, m_tree, parameters=None):
-    parameters = {} if parameters is None else parameters
-    parameters['COMPARE_OPTION'] = 1 if parameters.get('COMPARE_OPTION') is None else parameters['COMPARE_OPTION']
-    ret_tuple_as_trans_desc = False if parameters.get(PARAM_ALIGNMENT_RESULT_IS_SYNC_PROD_AWARE) is None else \
-        parameters[PARAM_ALIGNMENT_RESULT_IS_SYNC_PROD_AWARE]
+def apply_with_lock(alignments, tree, m_tree, option=1):
     alignments = copy.deepcopy(alignments)
-    com_res = pt_compare.apply(tree, m_tree, parameters['COMPARE_OPTION'])
+    com_res = pt_compare.apply(tree, m_tree, option)
     if not com_res.value:
         for align in alignments:
             if align.get("expand") is None:
-                scope_expand_trace(align["alignment"], com_res.subtree1, ret_tuple_as_trans_desc)
+                scope_expand_trace(align["alignment"], com_res.subtree1, True)
                 align["expand"] = True
         for a in alignments:
             a.pop("expand") if a.get("expand") is not None else None
     return alignments
 
 
-def apply(align, tree_info, mapping_t, com_res, ret_tuple_as_trans_desc, ):
-    add_lock_for_each_node(tree_info[1].tree, align, tree_info, mapping_t)
+def apply(align, tree_info, mapping_t, com_res, ret_tuple_as_trans_desc):
+    add_lock_for_each_node(tree_info[1].tree, align, tree_info, mapping_t, ret_tuple_as_trans_desc)
     scope_expand_trace(align, com_res.subtree1, ret_tuple_as_trans_desc)
-    index = search_scope_index(align, com_res.subtree1, True)
+    index = search_scope_index(align, com_res.subtree1, ret_tuple_as_trans_desc)
     index = remove_lock(align, index)
     ranges = list()
     for j in range(len(index) // 2):

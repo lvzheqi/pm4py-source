@@ -207,8 +207,10 @@ def example_scope_expand_with_lock():
     repair_alignment.process_tree.operation.pt_number.apply(tree1, 'D', 1)
     alignment_on_tree1 = alignment_on_lock_pt(tree1, log)
     parameters = {'ret_tuple_as_trans_desc': True}
+    option = 1
     expand_alignment = repair_alignment.algo.range_detection.se_rd_lock.apply_with_lock(alignment_on_tree1,
-                                                                                        tree1, tree2, parameters)
+                                                                                        tree1, tree2, parameters,
+                                                                                        option)
 
     print("Tree1:", tree1)
     print("Tree2:", tree2)

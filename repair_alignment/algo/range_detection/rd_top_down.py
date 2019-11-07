@@ -4,30 +4,30 @@ from repair_alignment.algo.utils import align_utils
 from repair_alignment.algo.utils.tree_utils import RangeInterval
 
 
-def find_left_bound(range_interval, align, node_index, tree_info, mapping_t):
+def find_left_bound(range_interval, align, node_index, tree_info, mapping_t, ret_tuple_as_trans_desc):
     left_bound = range_interval.lower_bound
     tree_range = tree_info[node_index].tree_range
     while True:
         if left_bound > range_interval.upper_bound:
             return -1
         move = align[left_bound]
-        if not align_utils.is_log_move(move, True):
-            model_index = align_utils.move_index(move, mapping_t, True)
+        if not align_utils.is_log_move(move, ret_tuple_as_trans_desc):
+            model_index = align_utils.move_index(move, mapping_t, ret_tuple_as_trans_desc)
             if tree_range.is_in_range(model_index):
                 break
         left_bound += 1
     return left_bound
 
 
-def find_right_bound(range_interval, align, node_index, tree_info, mapping_t):
+def find_right_bound(range_interval, align, node_index, tree_info, mapping_t, ret_tuple_as_trans_desc):
     right_bound = cur_index = range_interval.upper_bound
     tree_range = tree_info[node_index].tree_range
     while True:
         if cur_index < range_interval.lower_bound:
             return -1
         move = align[cur_index]
-        if not align_utils.is_log_move(move, True):
-            model_index = align_utils.move_index(move, mapping_t, True)
+        if not align_utils.is_log_move(move, ret_tuple_as_trans_desc):
+            model_index = align_utils.move_index(move, mapping_t, ret_tuple_as_trans_desc)
             if tree_range.is_in_range(model_index):
                 break
             else:
@@ -36,7 +36,7 @@ def find_right_bound(range_interval, align, node_index, tree_info, mapping_t):
     return right_bound
 
 
-def compute_ranges_for_loop(align, tree_info, mapping_t, node_index, ranges):
+def compute_ranges_for_loop(align, tree_info, mapping_t, node_index, ranges, ret_tuple_as_trans_desc):
     parent_node_index = tree_info[node_index].tree.parent.index
     if node_index == parent_node_index + 1:
         ub = tree_info[parent_node_index].tree_range.upper_bound
@@ -47,21 +47,24 @@ def compute_ranges_for_loop(align, tree_info, mapping_t, node_index, ranges):
 
     new_ranges = list()
     for range_interval in ranges:
-        ri = compute_one_range_for_sequence(align, tree_info, mapping_t, node_index, range_interval)
+        ri = compute_one_range_for_sequence(align, tree_info, mapping_t, node_index, range_interval,
+                                            ret_tuple_as_trans_desc)
         if ri is not None:
             cur_pos = left_bound = ri.lower_bound
             while cur_pos <= ri.upper_bound:
                 move = align[cur_pos]
-                if not align_utils.is_log_move(move, True):
-                    move_cur_index = align_utils.move_index(move, mapping_t, True)
+                if not align_utils.is_log_move(move, ret_tuple_as_trans_desc):
+                    move_cur_index = align_utils.move_index(move, mapping_t, ret_tuple_as_trans_desc)
                     move_in_nei = nei_ranges.is_in_range(move_cur_index)
                 else:
                     move_in_nei = False
                 if move_in_nei or cur_pos == ri.upper_bound:
                     new_ranges.append(compute_one_range_for_sequence(align, tree_info, mapping_t, node_index,
-                                                                     RangeInterval(left_bound, cur_pos)))
+                                                                     RangeInterval(left_bound, cur_pos),
+                                                                     ret_tuple_as_trans_desc))
                     ri = compute_one_range_for_sequence(align, tree_info, mapping_t, node_index,
-                                                        RangeInterval(cur_pos + 1, ri.upper_bound))
+                                                        RangeInterval(cur_pos + 1, ri.upper_bound),
+                                                        ret_tuple_as_trans_desc)
                     if ri is None:
                         break
                     elif ri.upper_bound == ri.lower_bound:
@@ -71,47 +74,49 @@ def compute_ranges_for_loop(align, tree_info, mapping_t, node_index, ranges):
     return new_ranges
 
 
-def compute_one_range_for_sequence(align, tree_info, mapping_t, node_index, range_interval):
-    left_bound = find_left_bound(range_interval, align, node_index, tree_info, mapping_t)
+def compute_one_range_for_sequence(align, tree_info, mapping_t, node_index, range_interval, ret_tuple_as_trans_desc):
+    left_bound = find_left_bound(range_interval, align, node_index, tree_info, mapping_t, ret_tuple_as_trans_desc)
     if left_bound == -1:
         return None
-    right_bound = find_right_bound(range_interval, align, node_index, tree_info, mapping_t)
+    right_bound = find_right_bound(range_interval, align, node_index, tree_info, mapping_t, ret_tuple_as_trans_desc)
     return RangeInterval(left_bound, right_bound)
 
 
-def compute_ranges_for_xor_parallel(align, tree_info, mapping_t, node_index, ranges):
-    return compute_ranges_for_sequence(align, tree_info, mapping_t, node_index, ranges)
+def compute_ranges_for_xor_parallel(align, tree_info, mapping_t, node_index, ranges, ret_tuple_as_trans_desc):
+    return compute_ranges_for_sequence(align, tree_info, mapping_t, node_index, ranges, ret_tuple_as_trans_desc)
 
 
-def compute_ranges_for_sequence(align, tree_info, mapping_t, node_index, ranges):
+def compute_ranges_for_sequence(align, tree_info, mapping_t, node_index, ranges, ret_tuple_as_trans_desc):
     new_ranges = list()
     for ri in ranges:
-        new_range = compute_one_range_for_sequence(align, tree_info, mapping_t, node_index, ri)
+        new_range = compute_one_range_for_sequence(align, tree_info, mapping_t, node_index, ri, ret_tuple_as_trans_desc)
         if new_range is not None:
             new_ranges.append(new_range)
     return new_ranges
 
 
-def remove_first_log_move(align):
+def remove_first_log_move(align, ret_tuple_as_trans_desc):
     left_bound = 0
     while True:
         move = align[left_bound]
-        if not align_utils.is_log_move(move, True):
+        if not align_utils.is_log_move(move, ret_tuple_as_trans_desc):
             break
         left_bound += 1
     return [RangeInterval(left_bound, len(align) - 1)]
 
 
-def apply(align, tree_info, mapping_t, com_res):
+def apply(align, tree_info, mapping_t, com_res, ret_tuple_as_trans_desc):
     ranges = list()
     for node_index in tree_info[com_res.subtree1.index].paths:
         node = tree_info[node_index].tree
         if node.parent is None:
-            ranges = remove_first_log_move(align)
+            ranges = remove_first_log_move(align, ret_tuple_as_trans_desc)
         elif node.parent.operator == Operator.LOOP:
-            ranges = compute_ranges_for_loop(align, tree_info, mapping_t, node.index, ranges)
+            ranges = compute_ranges_for_loop(align, tree_info, mapping_t, node.index, ranges, ret_tuple_as_trans_desc)
         elif node.parent.operator == Operator.SEQUENCE:
-            ranges = compute_ranges_for_sequence(align, tree_info, mapping_t, node.index, ranges)
+            ranges = compute_ranges_for_sequence(align, tree_info, mapping_t, node.index, ranges,
+                                                 ret_tuple_as_trans_desc)
         elif node.parent.operator == Operator.XOR or node.parent.operator == Operator.PARALLEL:
-            ranges = compute_ranges_for_xor_parallel(align, tree_info, mapping_t, node.index, ranges)
+            ranges = compute_ranges_for_xor_parallel(align, tree_info, mapping_t, node.index, ranges,
+                                                     ret_tuple_as_trans_desc)
     return ranges

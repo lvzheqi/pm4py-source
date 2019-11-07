@@ -17,13 +17,13 @@ def compute_repairing_alignments(state, com_res, log, alignments, tree_info, map
         if alignment.get("repair") is None:
             ranges = list()
             if state == Version.AR_LINEAR:
-                ranges = rd_linear.apply(align, tree_info, mapping_t, com_res, stop_condition)
+                ranges = rd_linear.apply(align, tree_info, mapping_t, com_res, stop_condition, True)
             elif state == Version.IAR_LINEAR:
                 ranges = se_rd_lock.apply(align, tree_info, mapping_t, com_res, True)
             elif state == Version.AR_TOP_DOWN:
-                ranges = rd_top_down.apply(align, tree_info, mapping_t, com_res)
+                ranges = rd_top_down.apply(align, tree_info, mapping_t, com_res, True)
             elif state == Version.IAR_TOP_DOWN:
-                ranges = se_rd_top_down.apply(align, tree_info, mapping_t, com_res)
+                ranges = se_rd_top_down.apply(align, tree_info, mapping_t, com_res, True)
             if len(ranges) != 0:
                 reassemble.apply(alignment, log, ranges, mapping_t, com_res,
                                  tree_info[com_res.subtree1.index].tree_range, parameters,

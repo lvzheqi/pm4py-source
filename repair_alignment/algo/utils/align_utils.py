@@ -96,7 +96,6 @@ def check_model_label_belong_to_subtree(move, subtree_labels, ret_tuple_as_trans
     return False
 
 
-# TODO: dont't use anymore
 def alignment_parameters(net, std_mod_cost=2):
     model_cost_function, sync_cost_function = dict(), dict()
     for t in net.transitions:

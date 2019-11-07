@@ -69,7 +69,7 @@ def grade_iar_compare():
     sns.set(color_codes=True)
     pf11 = pd.read_excel(PATH + "align_opt1.xlsx", sheet_name='total', header=0)
     pf21 = pd.read_excel(PATH + "align_opt2.xlsx", sheet_name='total', header=0)
-    grade = pd.DataFrame({"Option1": pf11['grade'], "Option2": pf21['grade']})
+    grade = pd.DataFrame({"Default": pf11['grade'], "Option": pf21['grade']})
     sub_grade = []
     for i in grade.values:
         if i[0] == 1 and i[1] == 1:
@@ -77,7 +77,7 @@ def grade_iar_compare():
         else:
             sub_grade.append(i)
     # palette =
-    sns.scatterplot(data=pd.DataFrame(sub_grade, columns=grade.columns), markers={"Option2": "P", "Option1": "X"},
+    sns.scatterplot(data=pd.DataFrame(sub_grade, columns=grade.columns), markers={"Option": "P", "Default": "X"},
                     palette=[palette[1], palette[0]])
     plt.ylim(0, 1)
     plt.xlabel("Cases")
@@ -126,7 +126,7 @@ def time_iar_compare():
     pf11 = pd.read_excel(PATH + "align_opt1.xlsx", sheet_name='total', header=0)
     pf21 = pd.read_excel(PATH + "align_opt2.xlsx", sheet_name='total', header=0)
     grade = pd.DataFrame({
-        "Option2": pf21['repair align time'], "Option1": pf11['repair align time']})
+        "Option": pf21['repair align time'], "Default": pf11['repair align time']})
     # orient = 'h', width = 0.25,
     # , markers = {"Option1": "X", "Option2": "P"}
     grade.plot(color=palette)
@@ -146,7 +146,7 @@ def time_iar_compare():
 
     pf11 = pd.read_excel(PATH + "align_opt1.xlsx", sheet_name='19-21', header=0)
     pf21 = pd.read_excel(PATH + "align_opt2.xlsx", sheet_name='19-21', header=0)
-    grade = pd.DataFrame({"Option2": pf21['repair align time'], "Option1": pf11['repair align time']})[300:600]
+    grade = pd.DataFrame({"Option": pf21['repair align time'], "Default": pf11['repair align time']})[300:600]
     grade.plot(color=palette)
     plt.xlabel("Cases")
     plt.ylabel("Times")
@@ -156,7 +156,7 @@ def time_iar_compare():
 
     pf11 = pd.read_excel(PATH + "align_opt1.xlsx", sheet_name='22-24', header=0)
     pf21 = pd.read_excel(PATH + "align_opt2.xlsx", sheet_name='22-24', header=0)
-    grade = pd.DataFrame({"Option2": pf21['repair align time'], "Option1": pf11['repair align time']})[600:750]
+    grade = pd.DataFrame({"Option": pf21['repair align time'], "Default": pf11['repair align time']})[600:750]
     grade.plot(color=palette)
     plt.xlabel("Cases")
     plt.ylabel("Times")
@@ -174,10 +174,14 @@ def time_oa_iar_and_ar_compare():
         data_opt1 = pd.read_excel(PATH + "align_repair1.xlsx", sheet_name=i, header=0)
         data_opt2 = pd.read_excel(PATH + "align_opt2.xlsx", sheet_name=i, header=0)
         data_opt3 = pd.read_excel(PATH + "align_opt1.xlsx", sheet_name=i, header=0)
+        # opt2 = pd.DataFrame({"OA": data_opt2['optimal time'],
+        #                      "AR": data_opt1['repair align time'],
+        #                      "IAR": data_opt3['repair align time'],
+        #                      "IAR2": data_opt2['repair align time']})
+
         opt2 = pd.DataFrame({"OA": data_opt2['optimal time'],
-                             "AR2": data_opt1['repair align time'],
-                             "IAR1": data_opt3['repair align time'],
-                             "IAR2": data_opt2['repair align time']})
+                             "AR": data_opt1['repair align time'],
+                             "IAR": data_opt3['repair align time']})
         # opt2 = data_opt2[['optimal time', 'repair align time']]
         # repair_time = data['repair align time']
         # plt.figure()
@@ -213,10 +217,14 @@ def grade_iar_and_ar_compare():
         opt2[i] = data_opt2['grade']
     sns.boxplot(data=opt1, ax=axes[0], palette=palette)
     sns.boxplot(data=opt2, ax=axes[1], palette=palette)
-    axes[0].set_title("(a) Normalized grade of repairing alignments")
-    axes[1].set_title("(b) Normalized grade of Improved repairing alignments")
+    axes[0].set_title("(a) Normalized grade of Repairing Alignments")
+    axes[1].set_title("(b) Normalized grade of Improved Repairing Alignments")
     plt.savefig(PATH + 'ComapreGradeARandIAR', dpi=300)
     plt.show()
+
+
+def pie_analyse():
+    grade = pd.read_excel(PATH + "align_opt1.xlsx", sheet_name='total', header=0)['grade']
 
 
 if __name__ == "__main__":
@@ -232,3 +240,6 @@ def pie_chart():
     plt.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
     plt.plot()
     plt.show()
+
+
+
