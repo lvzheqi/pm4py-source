@@ -106,14 +106,22 @@ def parse_recursive(string_rep, depth_cache, depth):
         parse_recursive(string_rep[1:], depth_cache, depth)
     else:
         label = None
-        if string_rep.startswith('\''):
+        # if string_rep.startswith('\''):
+        #     string_rep = string_rep[1:]
+        #     escape_ext = string_rep.find('\'')
+        #     label = string_rep[0:escape_ext]
+        #     string_rep = string_rep[escape_ext + 1:]
+        # else:
+        #     print(string_rep)
+        #     assert (string_rep.startswith('tau'))
+        #     string_rep = string_rep[3:]
+        if not string_rep.startswith('τ'):
+            escape_ext = string_rep[0]
             string_rep = string_rep[1:]
-            escape_ext = string_rep.find('\'')
-            label = string_rep[0:escape_ext]
-            string_rep = string_rep[escape_ext + 1:]
+            label = escape_ext
         else:
-            assert (string_rep.startswith('tau'))
-            string_rep = string_rep[3:]
+            # assert (string_rep.startswith('tau'))
+            string_rep = string_rep[1:]
         parent = None if depth == 0 else depth_cache[depth - 1]
         node = pt.ProcessTree(operator=operator, parent=parent, label=label)
         if parent is not None:

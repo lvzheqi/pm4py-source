@@ -20,8 +20,10 @@ if __name__ == "__main__":
     from examples import parquet
     from examples import sna_log
     from examples import transition_system_test
+    from examples import heu_miner_test
     from examples import stochastic_petri_nets
     from examples import stochastic_petri_df
+    from examples import dfg_min_ex
     from examples import big_dataframe_filtering
     from examples import big_dataframe_management
     from examples import graphs_visualization
@@ -50,10 +52,14 @@ if __name__ == "__main__":
     decisiontree_example.execute_script()
     print("\n\nexample_diagnostics")
     example_diagnostics.execute_script()
+    print("\n\ndfg_min_ex")
+    dfg_min_ex.execute_script()
     print("\n\nparquet")
     parquet.execute_script()
     print("\n\ntransition_system_test")
     transition_system_test.execute_script()
+    print("\n\nheu_miner_test")
+    heu_miner_test.execute_script()
     print("\n\nstochastic_petri_nets")
     stochastic_petri_nets.execute_script()
     print("\n\nstochastic_petri_df")
