@@ -14,7 +14,7 @@ from repair_alignment.algo.repair import repair
 from repair_alignment.algo.repair.version import Version
 
 
-PATH = '../../../data/D2/'
+PATH = '../../../data/D5/'
 #
 PT_RANGE = [(11, 15), (16, 18), (19, 21), (22, 24)]
 SHEET_NAME = [str(i) + "-" + str(j) for (i, j) in PT_RANGE]
@@ -115,11 +115,12 @@ def apply_align_on_one_pt(tree, m_tree, log, version, option):
 
 def compute_align_grade(num, version, option, file):
     mp_trees = pd.read_excel(m_tree_file, sheet_name=SHEET_NAME)
-    logs = pd.read_excel(log_file, sheet_name=SHEET_NAME)
+    # logs = pd.read_excel(log_file, sheet_name=SHEET_NAME)
 
     align_result = list()
     for i in mp_trees:
-        log_list = logs[i]['log'].tolist()
+        log_list = pd.read_csv(PATH + '/0.2/log'+i+'.csv')['log'].tolist()
+        # log_list = logs[i]['log'].tolist()
         tree_list = mp_trees[i]['tree'].tolist()
         mpt_list = mp_trees[i]['m_tree'].tolist()
         align_info = pd.DataFrame(columns=["optimal time", "optimal cost", "best worst cost",
@@ -219,6 +220,6 @@ if __name__ == "__main__":
     # random_create_dataset()
     # compute_align_grade1(len(depths) * mpt_num)
     # compute_align_grade(len(depths) * mpt_num, align_repair_opt.apply, 1, PATH + 'align_opt1.xlsx')
-    compute_align_grade(len(depths) * mpt_num, Version.IAR_LINEAR, 2, PATH + 'align_opt2.xlsx')
+    compute_align_grade(len(depths) * mpt_num, Version.AR_LINEAR, 1, PATH + 'align_opt1.xlsx')
     # PATH = '../../data/D3/'
     # compute_align_grade(len(depths) * mpt_num, align_repair_opt.apply, 2, PATH + 'align_opt2.xlsx')
