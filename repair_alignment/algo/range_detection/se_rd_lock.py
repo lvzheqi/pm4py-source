@@ -107,7 +107,6 @@ def find_left_border(node, align, cur_pos, bound, ret_tuple_as_trans_desc):
     if align_utils.is_node_end(align[index], node, ret_tuple_as_trans_desc):
         flag = 0
         children = pt_mani_utils.lock_tree_labels(node)
-        print("children", children)
         while not align_utils.is_node_start(align[index], node, ret_tuple_as_trans_desc):
             if not align_utils.check_model_label_belong_to_subtree(align[index], children, ret_tuple_as_trans_desc):
                 move_move(align, index, cur_pos)

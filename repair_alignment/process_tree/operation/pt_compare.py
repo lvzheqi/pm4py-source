@@ -97,7 +97,6 @@ def iterative_compare(tree1, tree2):
 def apply(tree1, tree2, option=1):
     com_res = iterative_compare(tree1, tree2)
     if option == 2 and com_res.subtree1 is not None and com_res.subtree1.parent is not None and \
-            (com_res.subtree1.parent.operator == Operator.LOOP or com_res.subtree1.parent.operator == Operator.XOR
-             or com_res.subtree2.operator == Operator.LOOP):
+            (com_res.subtree1.parent.operator == Operator.LOOP):
         return CompareResult(com_res.value, com_res.subtree1.parent, com_res.subtree2.parent)
     return com_res

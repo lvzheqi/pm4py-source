@@ -153,38 +153,6 @@ def compute_alignment1(version, option):
     df.to_csv(PATH + "align_repair_opt2.csv")
 
 
-def pie():
-
-    grade = pd.read_excel(PATH + "0.2/align_opt1.xlsx", sheet_name='total', header=0)['grade']
-
-    from repair_alignment.process_tree.operation import pt_compare
-    from pm4py.objects.process_tree.pt_operator import Operator
-    opt, labels = [0, 0, 0, 0], ["Xor", "Sequence", "Parallel", "Loop"]
-    for sn in SHEET_NAME:
-        data = pd.read_excel(PATH + "MProcessTree.xlsx", sheet_name=sn, header=0)
-        trees = data['tree']
-        m_trees = data['m_tree']
-        for index, tree in enumerate(trees):
-            com_res = pt_compare.apply(pt_utils.parse(tree), pt_utils.parse(m_trees[index]))
-            if grade[index] != 1 :
-                # and com_res.subtree1.parent is not None
-                if com_res.subtree1.operator == Operator.XOR:
-                    opt[0] += 1
-                if com_res.subtree1.operator == Operator.SEQUENCE:
-                    opt[1] += 1
-                if com_res.subtree1.operator == Operator.PARALLEL:
-                    opt[2] += 1
-                if com_res.subtree1.operator == Operator.LOOP:
-                    opt[3] += 1
-    import matplotlib.pyplot as plt
-    # explode = (0.1, 0)  # only "explode" the 2nd slice (i.e. 'Hogs')
-    plt.pie(opt, labels=labels, autopct='%1.01f%%', startangle=90)
-    plt.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
-    plt.plot()
-    plt.savefig("pie.png", dpi=300)
-    print(sum(opt))
-
-
 if __name__ == "__main__":
     # grade_compare()
     # time_compare()

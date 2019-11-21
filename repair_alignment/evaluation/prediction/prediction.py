@@ -19,7 +19,9 @@ from pm4py.objects.process_tree import util as pt_utils
 
 import re
 
-PATH = '../../../data/'
+PATH = '../../../data/D/'
+PT_RANGE = [(11, 15), (16, 18), (19, 21), (22, 24)]
+SHEET_NAME = [str(i) + "-" + str(j) for (i, j) in PT_RANGE]
 
 
 def run_feature(row):
@@ -70,7 +72,7 @@ def run_feature(row):
             num_xor += 1
         st = st.parent
 
-    return pd.Series([min_fit]+rate+ops+depths)
+    return pd.Series([min_fit] + rate + ops + depths)
 
 
 def create_feature(trees_info, logs):
@@ -200,36 +202,35 @@ def operator_unbalanced_tree(x, y):
 
 
 def set_y_label(comb_aligns, option):
+    a, b = 0, 0
     y_label = list()
     time_opt = comb_aligns['optimal time']
     time_repair = comb_aligns['repair align time']
     for index, i in enumerate(comb_aligns['grade'].tolist()):
         if option == 1:
-            if time_repair[index] > time_opt[index] or i < 0.98:
+            if time_repair[index] > time_opt[index] or i < 0.97:
                 y_label.append("a")
-            elif time_opt[index] - time_repair[index] > 5 and i < 0.99:
+            elif time_opt[index] - time_repair[index] > 30 and i < 0.98:
                 y_label.append("a")
             else:
                 y_label.append("b")
         else:
             if i < 1:
-                y_label.append("a")
+                y_label.append(0)
+                a += 1
             else:
-                y_label.append("b")
+                y_label.append(1)
+                b += 1
     return np.array(y_label)
 
 
 def run():
-    # comb_trees = pd.read_csv("TProcessTree.csv", header=0, index_col=0)
-    # comb_logs = pd.read_csv("TLog.csv", header=0, index_col=0)
-    comb_aligns = pd.read_csv("TAlign1.csv", header=0, index_col=0)
-    # x_label = create_feature(comb_trees, comb_logs)
-    # pd.DataFrame(x_label).to_csv('Feature.csv')
-    x_label = pd.read_csv("Feature.csv", header=0, index_col=0)
+    comb_aligns = pd.read_csv(PATH + "iar.csv", header=0, index_col=0)
+    x_label = pd.read_csv(PATH + "Features.csv", header=0, index_col=0)
     x_label = preprocessing.scale(x_label)
     # x_label = np.concatenate((x_label_p, x_label.values[:, 9:]), axis=1)
-    y_label = set_y_label(comb_aligns, 2)
-    run_neural_network(x_label, y_label)
+    y_label = set_y_label(comb_aligns, 1)
+    run_decision(x_label[:len(y_label)], y_label)
 
 
 def save_sub(comb_trees, comb_logs, comb_aligns):
@@ -252,12 +253,12 @@ def plot_depth_and_grade():
     import matplotlib.pyplot as plt
     import seaborn as sns
     sns.set(color_codes=True)
-    comb_trees = pd.read_csv("TProcessTree.csv", header=0, index_col=0)
-    comb_logs = pd.read_csv("TLog.csv", header=0, index_col=0)
-    x_label = create_feature(comb_trees, comb_logs)
-    # x_label.to_csv('Depth-Features.csv')
-    # x_label = pd.read_csv('Depth-Features.csv', header=0, index_col=0)
-    comb_aligns = pd.read_csv("TAlign1.csv", header=0, index_col=0)
+    comb_trees = pd.read_csv(PATH + "TProcessTree.csv", header=0, index_col=0)
+    comb_logs = pd.read_csv(PATH + "TLog.csv", header=0, index_col=0)
+    # x_label = create_feature(comb_trees, comb_logs)
+    # x_label.to_csv(PATH + 'TFeatures.csv')
+    x_label = pd.read_csv(PATH + 'TFeatures.csv', header=0, index_col=0)
+    comb_aligns = pd.read_csv(PATH + "TIar.csv", header=0, index_col=0)
     y_label = set_y_label(comb_aligns, 2)
     y_label = []
     for index, i in enumerate(comb_aligns['grade'].tolist()):
@@ -311,52 +312,88 @@ def change_depth():
 
 
 def combine_sheet_dataset(path):
-    file_names = ["MProcessTree.xlsx", "0.2/log.xlsx", "0.2/align_opt2.xlsx"]
+    file_names = ["MProcessTree.xlsx", "log.xlsx", "ar.xlsx", "iar.xlsx", "iar_ud.xlsx"]
     combines = []
     for file_name in file_names:
-        sheet1 = pd.read_excel(path + file_name, sheet_name='11-15', header=0)
-        sheet2 = pd.read_excel(path + file_name, sheet_name='16-18', header=0)
-        sheet3 = pd.read_excel(path + file_name, sheet_name='19-21', header=0)
-        sheet4 = pd.read_excel(path + file_name, sheet_name='22-24', header=0)
-        if file_name == "0.2/log.xlsx":
-            logs = sheet1['log'].tolist()
+        if file_name == "log.xlsx":
+            logs = pd.read_csv(path + 'log11-15.csv')['log'].tolist()
             for i in range(len(logs) - 1, -1, -1):
                 for _ in range(14):
                     logs.insert(i, logs[i])
             sheet1 = pd.DataFrame({'log': logs})
 
-            logs = sheet2['log'].tolist()
+            logs = pd.read_csv(path + 'log16-18.csv')['log'].tolist()
             for i in range(len(logs) - 1, -1, -1):
                 for _ in range(14):
                     logs.insert(i, logs[i])
             sheet2 = pd.DataFrame({'log': logs})
 
-            logs = sheet3['log'].tolist()
+            logs = pd.read_csv(path + 'log19-21.csv')['log'].tolist()
             for i in range(len(logs) - 1, -1, -1):
                 for _ in range(14):
                     logs.insert(i, logs[i])
             sheet3 = pd.DataFrame({'log': logs})
 
-            logs = sheet4['log'].tolist()
+            logs = pd.read_csv(path + 'log22-24.csv')['log'].tolist()
             for i in range(len(logs) - 1, -1, -1):
                 for _ in range(14):
                     logs.insert(i, logs[i])
             sheet4 = pd.DataFrame({'log': logs})
+        else:
+            sheet1 = pd.read_excel(path + file_name, sheet_name='11-15', header=0)
+            sheet2 = pd.read_excel(path + file_name, sheet_name='16-18', header=0)
+            sheet3 = pd.read_excel(path + file_name, sheet_name='19-21', header=0)
+            sheet4 = pd.read_excel(path + file_name, sheet_name='22-24', header=0)
         combines.append(pd.concat([sheet1, sheet2, sheet3, sheet4], ignore_index=True))
     return combines
 
 
 def combine_dataset():
-    comb_trees1, comb_logs1, comb_align1 = combine_sheet_dataset(PATH + "D1/")
-    comb_trees2, comb_logs2, comb_align2 = combine_sheet_dataset(PATH + "D2/")
-    # comb_trees3, comb_logs3, comb_align3 = combine_sheet_dataset(PATH + "D3/")
+    # comb_trees1, comb_logs1, comb_align1 = combine_sheet_dataset(PATH + "D/")
+    combines = combine_sheet_dataset(PATH)
+    combines[0].to_csv(PATH + "MProcessTree.csv")
+    combines[1].to_csv(PATH + "Log.csv")
+    combines[2].to_csv(PATH + "ar.csv")
+    combines[3].to_csv(PATH + "iar.csv")
+    combines[4].to_csv(PATH + "iar_ud.csv")
+    # comb_trees2, comb_logs2, comb_align2 = combine_sheet_dataset(PATH + "D2/")
+    # # comb_trees3, comb_logs3, comb_align3 = combine_sheet_dataset(PATH + "D3/")
+    #
+    # comb_trees = pd.concat([comb_trees1, comb_trees2], ignore_index=True, sort=True)  # , comb_trees3
+    # comb_logs = pd.concat([comb_logs1, comb_logs2], ignore_index=True, sort=True)  # , comb_logs3
+    # comb_align = pd.concat([comb_align1, comb_align2], ignore_index=True, sort=True)  # , comb_align3
+    # comb_trees.to_csv("TProcessTree.csv")
+    # comb_logs.to_csv("TLog.csv")
+    # comb_align.to_csv("iar.csv")
 
-    comb_trees = pd.concat([comb_trees1, comb_trees2], ignore_index=True, sort=True)  # , comb_trees3
-    comb_logs = pd.concat([comb_logs1, comb_logs2], ignore_index=True, sort=True)  # , comb_logs3
-    comb_align = pd.concat([comb_align1, comb_align2], ignore_index=True, sort=True)  # , comb_align3
-    comb_trees.to_csv("TProcessTree.csv")
-    comb_logs.to_csv("TLog.csv")
-    comb_align.to_csv("TAlign.csv")
+
+def combine_dataset_as_execl():
+    file_names = ["MProcessTree.xlsx", "ProcessTree.xlsx", "ar.xlsx", "iar.xlsx", "iar_ud.xlsx", 'Log.xlsx']
+    for i in file_names:
+        data = []
+        for j in SHEET_NAME:
+            sheet = []
+            for k in ["D1/", "D2/", "D3/"]:
+                if i == "Log.xlsx":
+                    sheet.append(pd.read_csv(PATH + k + "log" + j + ".csv", header=0))
+                else:
+                    sheet.append(pd.read_excel(PATH + k + i, sheet_name=j, header=0))
+            if i == "Log.xlsx":
+                data = pd.concat([a for a in sheet], ignore_index=True, sort=True)
+                data.to_csv(PATH + 'D/log' + j + ".csv", index=False)
+            else:
+                data.append(pd.concat([a for a in sheet], ignore_index=True, sort=True))
+        if i != "Log.xlsx":
+            with pd.ExcelWriter(PATH + "D/" + i) as writer:
+                for index, d in enumerate(data):
+                    d.to_excel(writer, sheet_name=SHEET_NAME[index], index=False)
+
+
+def write_feature_to_file():
+    comb_trees = pd.read_csv(PATH + "MProcessTree.csv", header=0, index_col=0)
+    comb_logs = pd.read_csv(PATH + "Log.csv", header=0, index_col=0)
+    x_label = create_feature(comb_trees, comb_logs)
+    x_label.to_csv(PATH + 'Features.csv')
 
 
 # def rerun_partial_dataset():
@@ -385,4 +422,6 @@ def combine_dataset():
 #
 
 if __name__ == "__main__":
-    plot_depth_and_grade()
+    # combine_dataset_as_execl()
+    # combine_dataset()
+    run()
