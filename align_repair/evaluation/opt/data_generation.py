@@ -10,17 +10,22 @@ from align_repair.process_tree.stochastic_generation import stochastic_pt_create
 from align_repair.process_tree.stochastic_generation import non_fitting_log_create as log_create
 from align_repair.process_tree.manipulation import pt_number, utils as pt_mani_utils
 from align_repair.evaluation import alignment_on_pt, create_event_log, get_best_cost_on_pt
-from align_repair.repair.optimal import align_repair_opt
+from align_repair.repair.optimal import align_repair_opt, align_repair2
+
+index = ''
 
 PATH = '../../data/'
-PT_RANGE = [(11, 15), (16, 18), (19, 21), (22, 24)]
+# ,
+PT_RANGE = [(11, 15), (16, 18), (19, 21), (22, 24), (25, 27)]
 SHEET_NAME = [str(i) + "-" + str(j) for (i, j) in PT_RANGE]
-pt_num, mpt_num, trace_num, non_fit_pro = 2, 2, 5, 0.2
-depths = [3, 4]
+pt_num, mpt_num, trace_num, non_fit_pro = 50, 5, 5, 0.5
+depths = [3, 4, 5]
 tree_file = PATH + 'ProcessTree.xlsx'
 m_tree_file = PATH + 'MProcessTree.xlsx'
-log_file = PATH + 'log.xlsx'
-align_file = PATH + 'align_opt.xlsx'
+log_file = PATH + 'Log.xlsx'
+align_file = PATH + 'align_opt'+index+'.xlsx'
+trace_fit_file = PATH + 'align_fit'+index+'.xlsx'
+
 
 
 def create_pts():
@@ -45,7 +50,7 @@ def create_m_pts(pts):
             for depth in depths:
                 for j in range(mpt_num):
                     m_tree = pt_mutate.apply(tree, depth)
-                    m_trees.loc[len(m_trees.index)] = trees.loc[i].tolist() + [str(m_tree), depths]
+                    m_trees.loc[len(m_trees.index)] = trees.loc[i].tolist() + [str(m_tree), depth]
         m_pts.append(m_trees)
     return m_pts
 
@@ -66,17 +71,21 @@ def create_logs(pts):
 
 
 def random_create_dataset():
-    p_trees = create_pts()
-    mp_trees = create_m_pts(p_trees)
+    # p_trees = create_pts()
+    # mp_trees = create_m_pts(p_trees)
+    p_trees = []
+    for i in SHEET_NAME:
+        pf = pd.read_excel(tree_file, i)
+        p_trees.append(pf)
     logs = create_logs(p_trees)
 
-    with pd.ExcelWriter(tree_file) as writer:
-        for i, pt in enumerate(p_trees):
-            pt.to_excel(writer, sheet_name=SHEET_NAME[i], index=False)
+    # with pd.ExcelWriter(tree_file) as writer:
+    #     for i, pt in enumerate(p_trees):
+    #         pt.to_excel(writer, sheet_name=SHEET_NAME[i], index=False)
 
-    with pd.ExcelWriter(m_tree_file) as writer:
-        for i, pt in enumerate(mp_trees):
-            pt.to_excel(writer, sheet_name=SHEET_NAME[i], index=False)
+    # with pd.ExcelWriter(m_tree_file) as writer:
+    #     for i, pt in enumerate(mp_trees):
+    #         pt.to_excel(writer, sheet_name=SHEET_NAME[i], index=False)
 
     with pd.ExcelWriter(log_file) as writer:
         for i, log in enumerate(logs):
@@ -91,47 +100,70 @@ def apply_align_on_one_pt(tree, m_tree, log, apply, option):
     alignments = alignment_on_pt(m_tree, log)
     end = time.time()
     optimal_time = end - start
-    print('optimal time:', end - start)
+    # print('optimal time:', end - start)
     optimal_cost = sum([align['cost'] for align in alignments])
-    print('optimal cost', optimal_cost)
+    # print('optimal cost', optimal_cost)
 
     start = time.time()
     parameters = {'ret_tuple_as_trans_desc': True}
     alignments, repair_alignments = apply(tree, m_tree, log, parameters, option)
     end = time.time()
-    print(repair_alignments)
     ra_time = end - start
-    print('repair time:', end - start)
+    # print('repair time:', end - start)
     ra_cost = sum([align['cost'] for align in repair_alignments])
     grade = 1 - (ra_cost - optimal_cost) / (best_worst_cost - optimal_cost) \
         if best_worst_cost != optimal_cost else 1
-    print('repair cost', ra_cost)
-    print('grade', grade)
-    return [optimal_time, optimal_cost, best_worst_cost, ra_time, ra_cost, grade]
+    # print('repair cost', ra_cost)
+    # print('grade', grade)
+
+    fitness = [align['fitness'] for align in alignments]
+    return [optimal_time, optimal_cost, best_worst_cost, ra_time, ra_cost, grade], fitness
 
 
 def compute_align_grade(num, apply, option):
     mp_trees = pd.read_excel(m_tree_file, sheet_name=SHEET_NAME)
     logs = pd.read_excel(log_file, sheet_name=SHEET_NAME)
     align_result = list()
+    fitness_info = list()
     for i in mp_trees:
         log_list = logs[i]['log'].tolist()
         tree_list = mp_trees[i]['tree'].tolist()
         mpt_list = mp_trees[i]['m_tree'].tolist()
         align_info = pd.DataFrame(columns=["optimal time", "optimal cost", "best worst cost",
                                            "repair align time", "repair align cost", "grade"])
+        fitness = pd.DataFrame(columns=["trace" + str(i) for i in range(trace_num)])
         for j, m_tree in enumerate(mpt_list):
             m_tree = pt_utils.parse(m_tree)
             tree = pt_utils.parse(tree_list[j // num])
             log = create_event_log(log_list[j // num])
-            align_info.loc[len(align_info.index)] = apply_align_on_one_pt(tree, m_tree, log, apply, option)
-        align_result.append(align_info)
+            info = apply_align_on_one_pt(tree, m_tree, log, apply, option)
+            align_info.loc[len(align_info.index)] = info[0]
+            fitness.loc[len(align_info.index)] = info[1]
+            print(i, j)
 
+        align_result.append(align_info)
+        fitness_info.append(fitness)
+
+    global index
     with pd.ExcelWriter(align_file) as writer:
         for i, align in enumerate(align_result):
             align.to_excel(writer, sheet_name=SHEET_NAME[i], index=False)
 
+    with pd.ExcelWriter(trace_fit_file) as writer:
+        for i, fit in enumerate(fitness_info):
+            fit.to_excel(writer, sheet_name=SHEET_NAME[i], index=False)
+    # index = index + 1
+
 
 if __name__ == "__main__":
-    random_create_dataset()
+    # random_create_dataset()
+    print('create finish!')
+    import time
+    #
+    # start = time.time()
+    # compute_align_grade(len(depths) * mpt_num, align_repair2.apply, 1)
+    # print(time.time() - start)
+    # #
+    start = time.time()
     compute_align_grade(len(depths) * mpt_num, align_repair_opt.apply, 2)
+    print(time.time() - start)
