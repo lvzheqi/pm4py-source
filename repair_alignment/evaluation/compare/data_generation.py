@@ -12,7 +12,7 @@ from repair_alignment.process_tree.operation import pt_number, utils as pt_mani_
 from repair_alignment.evaluation import alignment_on_pt, create_event_log, get_best_cost_on_pt, print_event_log
 from repair_alignment.algo.repair import repair
 from repair_alignment.algo.repair.version import Version
-from repair_alignment.evaluation.compare import apply_align_on_one_pt
+from repair_alignment.evaluation.compare import apply_align_on_one_pt, apply_align_on_one_pt2
 
 
 PATH = '../../../data/D3/'
@@ -118,6 +118,7 @@ def compute_align_grade(num, version, option, file):
 
 
 def compute_align_grade1(num):
+    trees = pd.read_excel(tree_file, sheet_name=SHEET_NAME)
     mp_trees = pd.read_excel(m_tree_file, sheet_name=SHEET_NAME)
     # logs = pd.read_excel(log_file, sheet_name=SHEET_NAME)
 
@@ -125,16 +126,13 @@ def compute_align_grade1(num):
     align_result2 = list()
     align_result3 = list()
     # align_result4 = list()
-    index = 1
-    for i in mp_trees:
-        if i != "22-24":
-            print(i, index)
-            continue
-
+    for i in trees:
+        itree_list = trees[i]['tree'].tolist()
         log_list = pd.read_csv(PATH + 'log' + i + ".csv")['log'].tolist()
         # log_list = logs[i]['log'].tolist()
         tree_list = mp_trees[i]['tree'].tolist()
         mpt_list = mp_trees[i]['m_tree'].tolist()
+
         align_info = pd.DataFrame(columns=["optimal time", "optimal cost",
                                            "repair align time", "repair align cost", "grade"])
         align_info2 = pd.DataFrame(columns=["optimal time", "optimal cost",
@@ -143,38 +141,32 @@ def compute_align_grade1(num):
                                                 "repair align time", "repair align cost", "grade"])
         # align_info4 = pd.DataFrame(columns=["optimal time", "optimal cost", "best worst cost",
         #                                     "repair align time", "repair align cost", "grade"])
-        for j, m_tree in enumerate(mpt_list):
-            if j < 61:
-                continue
-            print(j)
-            m_tree = pt_utils.parse(m_tree)
-            tree = pt_utils.parse(tree_list[j])
-            log = create_event_log(log_list[j // num])
-            info = apply_align_on_one_pt2(tree, m_tree, log)
-            align_info.loc[len(align_info.index)] = info[0]
-            align_info2.loc[len(align_info.index)] = info[1]
-            align_info3.loc[len(align_info.index)] = info[2]
+        for k, tree in enumerate(tree_list):
+            log = create_event_log(log_list[k])
+            alignments = alignment_on_pt(tree, log)
+            for j in range(num):
+                m_tree = pt_utils.parse(mpt_list[k * num + j])
+                info = apply_align_on_one_pt2(tree, m_tree, log, alignments)
+                align_info.loc[len(align_info.index)] = info[0]
+                align_info2.loc[len(align_info.index)] = info[1]
+                align_info3.loc[len(align_info.index)] = info[2]
             # align_info4.loc[len(align_info.index)] = info[3]
         align_result.append(align_info)
         align_result2.append(align_info2)
         align_result3.append(align_info3)
         # align_result4.append(align_info4)
 
-    with pd.ExcelWriter(PATH + 'ar1.xlsx') as writer:
-        align_result[0].to_excel(writer, sheet_name="22-24", index=False)
-        # for i, align in enumerate(align_result):
-        #     align.to_excel(writer, sheet_name=SHEET_NAME[i], index=False)
+    with pd.ExcelWriter(PATH + 'ar.xlsx') as writer:
+        for i, align in enumerate(align_result):
+            align.to_excel(writer, sheet_name=SHEET_NAME[i], index=False)
 
-    with pd.ExcelWriter(PATH + 'iar1.xlsx') as writer:
-        align_result[0].to_excel(writer, sheet_name="22-24", index=False)
-        #
-        # for i, align in enumerate(align_result2):
-        #     align.to_excel(writer, sheet_name=SHEET_NAME[i], index=False)
+    with pd.ExcelWriter(PATH + 'iar.xlsx') as writer:
+        for i, align in enumerate(align_result2):
+            align.to_excel(writer, sheet_name=SHEET_NAME[i], index=False)
 
-    with pd.ExcelWriter(PATH + 'iar_ud1.xlsx') as writer:
-        align_result[0].to_excel(writer, sheet_name="22-24", index=False)
-        # for i, align in enumerate(align_result3):
-        #     align.to_excel(writer, sheet_name=SHEET_NAME[i], index=False)
+    with pd.ExcelWriter(PATH + 'iar_ud.xlsx') as writer:
+        for i, align in enumerate(align_result3):
+            align.to_excel(writer, sheet_name=SHEET_NAME[i], index=False)
 
     # with pd.ExcelWriter(PATH + 'iar_ud2.xlsx') as writer:
     #     for i, align in enumerate(align_result4):

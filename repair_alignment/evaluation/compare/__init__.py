@@ -1,51 +1,22 @@
 import time
+import pandas as pd
 from repair_alignment.evaluation import alignment_on_pt, get_best_cost_on_pt
 from repair_alignment.algo.repair import repair
+from repair_alignment.algo.repair.version import Version
 
 
-def apply_align_on_one_pt(tree, m_tree, log, version, option):
-    print('-------------------------------------------------')
+def apply_align_on_one_pt2(tree, m_tree, log, alignments):
     best_worst_cost = get_best_cost_on_pt(m_tree, log)
 
     start = time.time()
-    alignment_on_pt(tree, log)
-    alignments = alignment_on_pt(m_tree, log)
-    end = time.time()
-    optimal_time = end - start
-    print('optimal time:', end - start)
-    optimal_cost = sum([align['cost'] for align in alignments])
-    print('optimal cost', optimal_cost)
-
-    start = time.time()
-    parameters = {'ret_tuple_as_trans_desc': True}
-    alignments, repair_alignments = repair.apply(tree, m_tree, log, version, parameters, option)
-    end = time.time()
-    ra_time = end - start
-    print('repair time:', end - start)
-
-    ra_cost = sum([align['cost'] for align in repair_alignments])
-    grade = 1 - (ra_cost - optimal_cost) / (best_worst_cost - optimal_cost) \
-        if best_worst_cost != optimal_cost else 1
-    print('repair cost', ra_cost)
-    print('grade', grade)
-    return [optimal_time, optimal_cost, ra_time, ra_cost, grade]
-
-
-def apply_align_on_one_pt2(tree, m_tree, log):
-    best_worst_cost = get_best_cost_on_pt(m_tree, log)
-
-    alignment_on_pt(tree, log)
-
-    start = time.time()
-    alignments = alignment_on_pt(m_tree, log)
+    opt_alignments = alignment_on_pt(m_tree, log)
     end = time.time()
     optimal_time = end - start
     print('optimal time:', optimal_time)
-    optimal_cost = sum([align['cost'] for align in alignments])
+    optimal_cost = sum([align['cost'] for align in opt_alignments])
     print('optimal cost', optimal_cost)
 
     parameters = {'ret_tuple_as_trans_desc': True}
-    alignments = alignment_on_pt(tree, log)
 
     start = time.time()
     alignments1, repair_alignments1 = repair.apply_with_alignments(tree, m_tree, log, alignments, Version.AR_LINEAR,
@@ -101,7 +72,7 @@ def apply_align_on_one_pt2(tree, m_tree, log):
     # [optimal_time, optimal_cost, best_worst_cost, ira_time4, ira_cost4, grade4]
 
 
-def apply_repair_align_on_one_pt(tree, m_tree, log, alignments, version, option):
+def apply_repair_align_on_one_pt(tree, m_tree, log, alignments, option):
     print('-------------------------------------------------')
     best_worst_cost = get_best_cost_on_pt(m_tree, log)
 
@@ -115,15 +86,36 @@ def apply_repair_align_on_one_pt(tree, m_tree, log, alignments, version, option)
 
     start = time.time()
     parameters = {'ret_tuple_as_trans_desc': True}
-    alignments, repair_alignments = repair.apply_with_alignments(tree, m_tree, log, alignments, version, parameters,
-                                                                 option)
+    alignments1, repair_alignments1 = repair.apply_with_alignments(tree, m_tree, log, alignments, Version.AR_LINEAR,
+                                                                   parameters, option)
     end = time.time()
-    ra_time = end - start
-    print('repair time:', end - start)
+    ra_time1 = end - start
 
-    ra_cost = sum([align['cost'] for align in repair_alignments])
-    grade = 1 - (ra_cost - optimal_cost) / (best_worst_cost - optimal_cost) \
+    ra_cost1 = sum([align['cost'] for align in repair_alignments1])
+    grade1 = 1 - (ra_cost1 - optimal_cost) / (best_worst_cost - optimal_cost) \
         if best_worst_cost != optimal_cost else 1
-    print('repair cost', ra_cost)
-    print('grade', grade)
-    return [optimal_time, optimal_cost, ra_time, ra_cost, grade]
+
+    start = time.time()
+    parameters = {'ret_tuple_as_trans_desc': True}
+    alignments2, repair_alignments2 = repair.apply_with_alignments(tree, m_tree, log, alignments, Version.IAR_TOP_DOWN,
+                                                                   parameters, option)
+    end = time.time()
+    ra_time2 = end - start
+
+    ra_cost2 = sum([align['cost'] for align in repair_alignments2])
+    grade2 = 1 - (ra_cost2 - optimal_cost) / (best_worst_cost - optimal_cost) \
+        if best_worst_cost != optimal_cost else 1
+    print('repair time:', ra_time1, ra_time2)
+    print('repair cost', ra_cost1, ra_cost2)
+    print('grade', grade1, grade2)
+    return [optimal_time, optimal_cost, ra_time1, ra_cost1, grade1, ra_time2, ra_cost2, grade2]
+
+
+def compute_align_grade(log, tree, m_trees):
+    alignments = alignment_on_pt(tree, log)
+    align_info = pd.DataFrame(columns=["optimal time", "optimal cost",
+                                       "ar time", "ar cost", "ar grade",
+                                       "iar align time", "iar cost", "iar grade"])
+    for m_tree in m_trees:
+        align_info.loc[len(align_info.index)] = apply_repair_align_on_one_pt(tree, m_tree, log, alignments, 1)
+    return align_info
