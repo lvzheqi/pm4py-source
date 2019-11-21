@@ -1,0 +1,1 @@
+from repair_alignment.deprecation import ar_lock
