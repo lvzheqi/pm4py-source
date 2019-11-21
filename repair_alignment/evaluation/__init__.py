@@ -23,10 +23,11 @@ def create_event_log(log):
 
 
 def print_event_log(log):
+
     for trace in log:
         for event in trace:
             print(event[pm4py.objects.log.util.xes.DEFAULT_NAME_KEY], end='')
-        print(end=", ")
+        print(end=" ")
     print()
 
 

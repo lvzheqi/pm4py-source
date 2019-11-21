@@ -12,6 +12,8 @@ from repair_alignment.process_tree.operation import pt_number, utils as pt_mani_
 from repair_alignment.evaluation import alignment_on_pt, create_event_log, get_best_cost_on_pt, print_event_log
 from repair_alignment.algo.repair import repair
 from repair_alignment.algo.repair.version import Version
+from repair_alignment.evaluation.compare import apply_align_on_one_pt
+
 
 PATH = '../../../data/D3/'
 #
@@ -91,34 +93,6 @@ def random_create_dataset():
         log.to_csv(PATH + '/0.2/log' + SHEET_NAME[i] + ".csv", index=False)
 
 
-def apply_align_on_one_pt(tree, m_tree, log, version, option):
-    print('-------------------------------------------------')
-    best_worst_cost = get_best_cost_on_pt(m_tree, log)
-
-    start = time.time()
-    alignment_on_pt(tree, log)
-    alignments = alignment_on_pt(m_tree, log)
-    end = time.time()
-    optimal_time = end - start
-    print('optimal time:', end - start)
-    optimal_cost = sum([align['cost'] for align in alignments])
-    print('optimal cost', optimal_cost)
-
-    start = time.time()
-    parameters = {'ret_tuple_as_trans_desc': True}
-    alignments, repair_alignments = repair.apply(tree, m_tree, log, version, parameters, option)
-    end = time.time()
-    ra_time = end - start
-    print('repair time:', end - start)
-
-    ra_cost = sum([align['cost'] for align in repair_alignments])
-    grade = 1 - (ra_cost - optimal_cost) / (best_worst_cost - optimal_cost) \
-        if best_worst_cost != optimal_cost else 1
-    print('repair cost', ra_cost)
-    print('grade', grade)
-    return [optimal_time, optimal_cost, ra_time, ra_cost, grade]
-
-
 def compute_align_grade(num, version, option, file):
     mp_trees = pd.read_excel(m_tree_file, sheet_name=SHEET_NAME)
     # logs = pd.read_excel(log_file, sheet_name=SHEET_NAME)
@@ -141,76 +115,6 @@ def compute_align_grade(num, version, option, file):
     with pd.ExcelWriter(file) as writer:
         for i, align in enumerate(align_result):
             align.to_excel(writer, sheet_name=SHEET_NAME[i], index=False)
-
-
-def apply_align_on_one_pt2(tree, m_tree, log):
-    best_worst_cost = get_best_cost_on_pt(m_tree, log)
-
-    alignment_on_pt(tree, log)
-
-    start = time.time()
-    alignments = alignment_on_pt(m_tree, log)
-    end = time.time()
-    optimal_time = end - start
-    print('optimal time:', optimal_time)
-    optimal_cost = sum([align['cost'] for align in alignments])
-    print('optimal cost', optimal_cost)
-
-    parameters = {'ret_tuple_as_trans_desc': True}
-    alignments = alignment_on_pt(tree, log)
-
-    start = time.time()
-    alignments1, repair_alignments1 = repair.apply_with_alignments(tree, m_tree, log, alignments, Version.AR_LINEAR,
-                                                                   parameters, 1)
-    end = time.time()
-    ra_time1 = end - start
-
-    start = time.time()
-    alignments2, repair_alignments2 = repair.apply_with_alignments(tree, m_tree, log, alignments, Version.IAR_LINEAR,
-                                                                   parameters, 1)
-    end = time.time()
-    ira_time2 = end - start
-
-    start = time.time()
-    alignments3, repair_alignments3 = repair.apply_with_alignments(tree, m_tree, log, alignments, Version.IAR_TOP_DOWN,
-                                                                   parameters, 1)
-    end = time.time()
-    ira_time3 = end - start
-
-    # start = time.time()
-    # alignments4, repair_alignments4 = repair.apply_with_alignments(tree, m_tree, log, alignments, Version.IAR_TOP_DOWN,
-    #                                                                parameters, 2)
-    # end = time.time()
-    # ira_time4 = end - start
-
-    print('repair time:', ra_time1, ira_time2, ira_time3)
-    # print('repair time:', ra_time1, ira_time2, ira_time3, ira_time4)
-
-    ra_cost1 = sum([align['cost'] for align in repair_alignments1])
-    grade1 = 1 - (ra_cost1 - optimal_cost) / (best_worst_cost - optimal_cost) \
-        if best_worst_cost != optimal_cost else 1
-
-    ira_cost2 = sum([align['cost'] for align in repair_alignments2])
-    grade2 = 1 - (ira_cost2 - optimal_cost) / (best_worst_cost - optimal_cost) \
-        if best_worst_cost != optimal_cost else 1
-
-    ira_cost3 = sum([align['cost'] for align in repair_alignments3])
-    grade3 = 1 - (ira_cost3 - optimal_cost) / (best_worst_cost - optimal_cost) \
-        if best_worst_cost != optimal_cost else 1
-
-    # ira_cost4 = sum([align['cost'] for align in repair_alignments4])
-    # grade4 = 1 - (ira_cost4 - optimal_cost) / (best_worst_cost - optimal_cost) \
-    #     if best_worst_cost != optimal_cost else 1
-
-    print('repair cost', ra_cost1, ira_cost2, ira_cost3)
-    print('grade', grade1, grade2, grade3)
-
-    # print('repair cost', ra_cost1, ira_cost2, ira_cost3, ira_cost4)
-    # print('grade', grade1, grade2, grade3, grade4)
-    return [[optimal_time*40, optimal_cost*40, ra_time1*40, ra_cost1*40, grade1],
-            [optimal_time*40, optimal_cost*40, ira_time2*40, ira_cost2*40, grade2],
-            [optimal_time*40, optimal_cost*40, ira_time3*40, ira_cost3*40, grade3]]
-            # [optimal_time, optimal_cost, best_worst_cost, ira_time4, ira_cost4, grade4]
 
 
 def compute_align_grade1(num):
