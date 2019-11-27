@@ -116,17 +116,19 @@ def option_grade_time_compare():
         else:
             sub_grade.append(i)
     grade = pd.DataFrame(sub_grade, columns=grade.columns)
-    time = pd.DataFrame({"Default": pf11['repair align time'], "Option": pf21['repair align time']})
+    time = pd.DataFrame({"Default": pf11['repair align time'], "Option": pf21['repair align time'],
+                         "Optimal": pf21['optimal time']})
 
     fig, axes = plt.subplots(1, 2, figsize=(10, 3))
     axes[0].tick_params(labelsize=9)
     sns.violinplot(data=grade, inner=None, color=".8", ax=axes[0])
     sns.stripplot(data=grade, jitter=True, alpha=.3, ax=axes[0], palette="muted")
+    axes[0].set_ylabel('Grade', fontsize=9)
+
     axes[1].tick_params(labelsize=9)
     sns.boxplot(width=0.25, data=time, ax=axes[1], showfliers=False, palette="muted")
     time.quantile(0.75)
     time.quantile(0.25)
-    axes[0].set_ylabel('Grade', fontsize=9)
     axes[1].set_ylabel('Seconds', fontsize=9)
     plt.tight_layout()
     # fig.suptitle("Compare Grade and Runtime of IAR Up and Down with Other Option")

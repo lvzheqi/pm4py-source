@@ -176,7 +176,7 @@ def compute_align_grade1(num):
 if __name__ == "__main__":
     # random_create_dataset()
     compute_align_grade1(len(depths) * mpt_num)
-    # compute_align_grade(len(depths) * mpt_num, Version.AR_LINEAR, 1, PATH + 'align_opt1.xlsx')
+    compute_align_grade(len(depths) * mpt_num, Version.AR_LINEAR, 1, PATH + 'align_opt1.xlsx')
     # compute_align_grade(len(depths) * mpt_num, Version.IAR_LINEAR, 2, PATH + 'align_opt2.xlsx')
     #
     # PATH = '../../../data/D6/'

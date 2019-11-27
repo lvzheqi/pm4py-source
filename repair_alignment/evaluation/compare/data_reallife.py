@@ -9,7 +9,7 @@ from pm4py.objects.process_tree import util as pt_utils
 
 from repair_alignment.process_tree.operation import pt_compare
 from repair_alignment.evaluation.compare import compute_align_grade
-
+from repair_alignment.process_tree.operation import utils as ra_pt_utils
 
 PATH = "../../../data/D5/"
 
@@ -87,18 +87,25 @@ def split_real_life_data(file):
 def result(file):
     name = file.split(".")[0]
     logs = pd.read_csv(PATH + file)["trace"].tolist()
-    for rd in range(5):
+    for rd in range(1):
         log = list_to_xes(random.sample(logs, len(logs)//10))
         # log = pd.read_csv("../../../data/reallife_test.csv")["trace"].tolist()
         tree_log = pd.read_csv(PATH + name + "_tree.csv")["trace"].tolist()
         tree = inductive_miner.apply_tree(list_to_xes(tree_log))
+        print(ra_pt_utils.pt_depth(str(tree)))
         m_trees = []
         for i in range(4):
             m_tree_log = pd.read_csv(PATH + name + "_part" + str(i + 1) + ".csv")["trace"].tolist()
             m_tree = inductive_miner.apply_tree(list_to_xes(m_tree_log))
+            print(ra_pt_utils.pt_depth(str(m_tree)))
+            print(len(ra_pt_utils.parse_tree_to_a_bfs_sequence(m_tree)), "+")
+
             m_trees.append(m_tree)
-        res = compute_align_grade(log, tree, m_trees)
-        res.to_csv(PATH + name + str(rd) + "_result.csv")
+            res_com = pt_compare.apply(tree, m_tree)
+            print(len(ra_pt_utils.parse_tree_to_a_bfs_sequence(res_com.subtree1)),
+                  len(ra_pt_utils.parse_tree_to_a_bfs_sequence(res_com.subtree2)))
+        # res = compute_align_grade(log, tree, m_trees)
+        # res.to_csv(PATH + name + str(rd) + "_result.csv")
 
 
 if __name__ == "__main__":

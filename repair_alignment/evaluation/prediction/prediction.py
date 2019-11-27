@@ -19,7 +19,7 @@ from pm4py.objects.process_tree import util as pt_utils
 
 import re
 
-PATH = '../../../data/D/'
+PATH = '../../../data/'
 PT_RANGE = [(11, 15), (16, 18), (19, 21), (22, 24)]
 SHEET_NAME = [str(i) + "-" + str(j) for (i, j) in PT_RANGE]
 
@@ -82,24 +82,11 @@ def create_feature(trees_info, logs):
     return t_feature
 
 
-def compute_accuracy(y_pred, y_test):
-    accuracy = metric.accuracy_score(np.array(y_test).flatten(), np.array(y_pred).flatten(),
-                                     normalize=True)
-    print("accuracy=", accuracy)
-    recall = metric.recall_score(np.array(y_test).flatten(), np.array(y_pred).flatten(),
-                                 average='macro')
-    print("recall=", recall)
-    f1score = metric.f1_score(np.array(y_test).flatten(), np.array(y_pred).flatten(),
-                              average='macro')
-    print("f1score=", f1score)
-    print(classification_report(y_test, y_pred, target_names=['a', 'b']))
-
-
 def run_decision(x, y):
     x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=50)
-    clf = AdaBoostClassifier(dt.DecisionTreeClassifier(max_depth=10, min_samples_leaf=5, min_samples_split=20),
-                             n_estimators=300, learning_rate=0.95)
-    # clf = dt.DecisionTreeClassifier()
+    # clf = AdaBoostClassifier(dt.DecisionTreeClassifier(max_depth=10, min_samples_leaf=5, min_samples_split=20),
+    #                          n_estimators=300, learning_rate=0.95)
+    clf = dt.DecisionTreeClassifier()
     clf.fit(x_train, y_train)
     print(clf.score(x_train, y_train))
     y_pred = clf.predict(x_test)
@@ -113,6 +100,8 @@ def run_decision(x, y):
     #                        filled=True, rounded=True)
     # check_output("dot -Tpdf " + dot_file + " -o " + pdf_file, shell=True)
     compute_accuracy(y_pred, y_test)
+    clf.fit(x_train, y_train)
+    return y_pred
 
 
 def run_neural_network(x, y):
@@ -224,13 +213,28 @@ def set_y_label(comb_aligns, option):
     return np.array(y_label)
 
 
+def compute_runtime_grade(comb_aligns, y_label):
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    pred_time = pd.Series()
+    print(y_label)
+    for y in y_label:
+        pass
+    time = pd.DataFrame({"Default": comb_aligns['repair align time'][:75],
+                         "Optimal": comb_aligns['optimal time'][:75]})
+    sns.boxplot(width=0.25, data=time, showfliers=False, palette="muted")
+    time.quantile(0.75)
+    time.quantile(0.25)
+
+    pass
+
+
 def run():
-    comb_aligns = pd.read_csv(PATH + "iar.csv", header=0, index_col=0)
-    x_label = pd.read_csv(PATH + "Features.csv", header=0, index_col=0)
+    comb_aligns = pd.read_csv(PATH + "/D/iar.csv", header=0, index_col=0)
+    x_label = pd.read_csv(PATH + "/D/Features.csv", header=0, index_col=0)
     x_label = preprocessing.scale(x_label)
-    # x_label = np.concatenate((x_label_p, x_label.values[:, 9:]), axis=1)
-    y_label = set_y_label(comb_aligns, 1)
-    run_decision(x_label[:len(y_label)], y_label)
+    y_label = set_y_label(comb_aligns, 2)
+    run_decision(x_label, y_label)
 
 
 def save_sub(comb_trees, comb_logs, comb_aligns):
@@ -373,18 +377,18 @@ def combine_dataset_as_execl():
         data = []
         for j in SHEET_NAME:
             sheet = []
-            for k in ["D1/", "D2/", "D3/"]:
+            for k in ["D2/", "D3/"]:
                 if i == "Log.xlsx":
                     sheet.append(pd.read_csv(PATH + k + "log" + j + ".csv", header=0))
                 else:
                     sheet.append(pd.read_excel(PATH + k + i, sheet_name=j, header=0))
             if i == "Log.xlsx":
                 data = pd.concat([a for a in sheet], ignore_index=True, sort=True)
-                data.to_csv(PATH + 'D/log' + j + ".csv", index=False)
+                data.to_csv(PATH + '/log' + j + ".csv", index=False)
             else:
                 data.append(pd.concat([a for a in sheet], ignore_index=True, sort=True))
         if i != "Log.xlsx":
-            with pd.ExcelWriter(PATH + "D/" + i) as writer:
+            with pd.ExcelWriter(PATH + "/" + i) as writer:
                 for index, d in enumerate(data):
                     d.to_excel(writer, sheet_name=SHEET_NAME[index], index=False)
 
@@ -421,7 +425,41 @@ def write_feature_to_file():
 #     pd.DataFrame(data=np.array(align_info), columns=comb_aligns.columns).to_csv("TAlign1.csv")
 #
 
+def compute_accuracy(y_pred, y_test):
+    accuracy = metric.accuracy_score(np.array(y_test).flatten(), np.array(y_pred).flatten(),
+                                     normalize=True)
+    print("accuracy=", accuracy)
+    recall = metric.recall_score(np.array(y_test).flatten(), np.array(y_pred).flatten(),
+                                 average='macro')
+    print("recall=", recall)
+    f1score = metric.f1_score(np.array(y_test).flatten(), np.array(y_pred).flatten(),
+                              average='macro')
+    print("f1score=", f1score)
+    print(classification_report(y_test, y_pred, target_names=['a', 'b']))
+
+
+def run2():
+    comb_aligns1 = pd.read_csv(PATH + "/D0/iar.csv", header=0, index_col=0)
+    comb_aligns2 = pd.read_csv(PATH + "/D1/iar.csv", header=0, index_col=0)
+
+    x_label = pd.read_csv(PATH + "D0/Features.csv", header=0, index_col=0)
+    x_train = preprocessing.scale(x_label)
+    x_label = pd.read_csv(PATH + "D1/Features.csv", header=0, index_col=0)
+    x_test = preprocessing.scale(x_label)
+    y_train = set_y_label(comb_aligns1, 2)
+    y_test = set_y_label(comb_aligns2, 2)
+    clf = MLPClassifier(hidden_layer_sizes=(300, 200),
+                        activation='tanh')
+    clf.fit(x_train, y_train)
+    print(clf.score(x_train, y_train))
+    y_pred = clf.predict(x_test)
+    compute_accuracy(y_pred, y_test)
+    # compute_runtime_grade(comb_aligns1, y_label)
+
+
 if __name__ == "__main__":
     # combine_dataset_as_execl()
     # combine_dataset()
-    run()
+    # write_feature_to_file()
+    # run()
+    run2()
